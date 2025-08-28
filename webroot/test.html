@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+</head>
+<body>
+    <h1>API Test Page</h1>
+    
+    <button id="test-api">Test API POST</button>
+    <button id="test-upload">Test File Upload</button>
+    
+    <div id="results" style="margin-top: 20px; padding: 20px; background: #f5f5f5; white-space: pre-wrap;"></div>
+    
+    <input type="file" id="file-input" multiple>
+    
+    <script>
+        $('#test-api').on('click', function() {
+            $('#results').text('Testing API POST...');
+            
+            $.ajax({
+                url: '/api/test',
+                method: 'POST',
+                data: { test: 'data', message: 'hello' },
+                dataType: 'json',
+                success: function(response) {
+                    $('#results').text('SUCCESS:\n' + JSON.stringify(response, null, 2));
+                },
+                error: function(xhr, status, error) {
+                    $('#results').text('ERROR:\n' + 
+                        'Status: ' + xhr.status + '\n' +
+                        'Response: ' + xhr.responseText + '\n' +
+                        'Error: ' + error);
+                }
+            });
+        });
+        
+        $('#test-upload').on('click', function() {
+            const files = $('#file-input')[0].files;
+            if (files.length === 0) {
+                alert('Please select a file first');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('parent_path', '');
+            for (let i = 0; i < files.length; i++) {
+                formData.append('files[]', files[i]);
+            }
+            
+            $('#results').text('Testing file upload...');
+            
+            $.ajax({
+                url: '/api/upload',
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    $('#results').text('UPLOAD SUCCESS:\n' + JSON.stringify(response, null, 2));
+                },
+                error: function(xhr, status, error) {
+                    $('#results').text('UPLOAD ERROR:\n' + 
+                        'Status: ' + xhr.status + '\n' +
+                        'Response: ' + xhr.responseText + '\n' +
+                        'Error: ' + error);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
