@@ -1,0 +1,66 @@
+name: FTP Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  ftp-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Upload files via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASS }}
+          server-dir: /files.rbtkaweb.site/htdocs/
+          local-dir: ./
+          exclude: |
+            **/.git*
+            **/.github/**
+            **/.vscode/**
+            **/.idea/**
+            **/node_modules/**
+            **/tests/**
+            **/tmp/**
+            **/logs/**
+            vendor/**
+            config/app_local.php
+            **/.DS_Store
+            **/Thumbs.db
+            **/phpunit.xml*
+            **/phpstan.neon
+            **/psalm.xml
+            **/composer.lock
+            **/webroot/uploads/**
+
+      # Optional: Upload vendor if you deploy built dependencies
+      # - name: Install PHP dependencies
+      #   uses: php-actions/composer@v6
+      #   with:
+      #     php_version: '8.2'
+      #     args: --no-dev --prefer-dist --no-interaction --no-progress
+      #
+      # - name: Re-upload including vendor
+      #   uses: SamKirkland/FTP-Deploy-Action@v4
+      #   with:
+      #   	server: ${{ secrets.FTP_SERVER }}
+      #     username: ${{ secrets.FTP_USER }}
+      #     password: ${{ secrets.FTP_PASS }}
+      #     server-dir: /www/wwwroot/ims.fcrit.ac.in/v2
+      #     local-dir: ./
+      #     exclude: |
+      #       **/.git*
+      #       **/.github/**
+      #       **/node_modules/**
+      #       **/tests/**
+      #       **/tmp/**
+      #       **/logs/**
+      #       **/.DS_Store
+      #       **/Thumbs.db
+

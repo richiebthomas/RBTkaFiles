@@ -1,0 +1,216 @@
+/* Notes Section Styling */
+.notes-section {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.note-item {
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background: #f8fafc;
+}
+
+.note-item:last-child {
+    margin-bottom: 0;
+}
+
+.note-header {
+    margin-bottom: 0.5rem;
+}
+
+.note-timestamp {
+    font-size: 0.85rem;
+    color: #718096;
+}
+
+.note-actions {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.note-item:hover .note-actions {
+    opacity: 1;
+}
+
+.note-content {
+    font-family: 'Fira Mono', 'Consolas', 'Monaco', 'Courier New', monospace !important;
+    font-size: 0.95rem !important;
+    line-height: 1.6 !important;
+    color: #2c3e50 !important;
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+    background: none !important;
+    border: none !important;
+    padding: 1.5rem !important;
+    margin: 0 !important;
+    transition: max-height 0.4s ease-out !important;
+}
+
+/* Collapsed state with gradient fade */
+.note-content.collapsed {
+    max-height: 8.5em !important;
+    overflow: hidden !important;
+    position: relative !important;
+}
+
+.note-content.collapsed::after {
+    content: '' !important;
+    position: absolute !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 40px !important;
+    background: linear-gradient(transparent, #ffffff 90%) !important;
+    pointer-events: none !important;
+}
+
+.note-editor {
+    width: 100%;
+    min-height: 100px;
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    resize: vertical;
+}
+
+/* Read More Button Styling */
+.read-more-btn {
+    background: none !important;
+    border: none !important;
+    color: #4ecdc4 !important;
+    font-size: 0.9rem !important;
+    font-weight: 500 !important;
+    padding: 0.5rem 0 !important;
+    margin-top: 0.5rem !important;
+    cursor: pointer !important;
+    text-decoration: none !important;
+    transition: all 0.3s ease !important;
+    display: inline-block !important;
+    position: relative !important;
+}
+
+.read-more-btn:hover {
+    color: #3aa89e !important;
+    text-decoration: underline !important;
+}
+
+.read-more-btn:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(78, 205, 196, 0.3) !important;
+}
+
+.read-more-btn::after {
+    content: ' ↴' !important;
+    font-size: 1rem !important;
+    transition: transform 0.3s ease !important;
+}
+
+.read-more-btn:hover::after {
+    transform: translateY(2px) !important;
+}
+
+/* When expanded (Show Less state) */
+.read-more-btn[data-state="expanded"]::after {
+    content: ' ↰' !important;
+}
+
+.read-more-btn[data-state="expanded"]:hover::after {
+    transform: translateY(-2px) !important;
+}
+
+/* Text formatting within notes */
+.note-content strong {
+    font-weight: 600 !important;
+    color: #2c3e50 !important;
+}
+
+.note-content em {
+    font-style: italic !important;
+    color: #6c757d !important;
+}
+
+.note-content u {
+    text-decoration: underline !important;
+    text-decoration-color: #4ecdc4 !important;
+}
+
+.note-content code {
+    background: #f8f9fa !important;
+    padding: 0.2rem 0.4rem !important;
+    border-radius: 4px !important;
+    font-size: 0.85em !important;
+    color: #dc3545 !important;
+}
+
+/* Line breaks and paragraphs */
+.note-content br {
+    display: block !important;
+    content: "" !important;
+    margin-bottom: 0.5rem !important;
+}
+
+/* Responsive text sizing */
+@media (max-width: 768px) {
+    .note-content {
+        font-size: 0.9rem !important;
+        padding: 1rem !important;
+        line-height: 1.5 !important;
+    }
+    
+    .read-more-btn {
+        font-size: 0.85rem !important;
+    }
+    
+    .note-content.collapsed {
+        max-height: 7em !important;
+    }
+}
+
+/* Custom scrollbar for longer notes */
+.note-content:not(.collapsed) {
+    max-height: 500px !important;
+    overflow-y: auto !important;
+    scrollbar-width: thin !important;
+    scrollbar-color: #4ecdc4 #f1f1f1 !important;
+}
+
+.note-content:not(.collapsed)::-webkit-scrollbar {
+    width: 6px !important;
+}
+
+.note-content:not(.collapsed)::-webkit-scrollbar-track {
+    background: #f1f1f1 !important;
+    border-radius: 3px !important;
+}
+
+.note-content:not(.collapsed)::-webkit-scrollbar-thumb {
+    background: #4ecdc4 !important;
+    border-radius: 3px !important;
+}
+
+.note-content:not(.collapsed)::-webkit-scrollbar-thumb:hover {
+    background: #3aa89e !important;
+}
+
+/* Notes Actions */
+.notes-actions {
+    margin-top: 1rem;
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+/* Edit Notes Button */
+#edit-notes {
+    margin-top: 1rem;
+    width: 100%;
+}
