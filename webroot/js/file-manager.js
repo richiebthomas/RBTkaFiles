@@ -183,6 +183,10 @@ class FileManager {
         e.originalEvent.dataTransfer.effectAllowed = 'move';
         
         $item.addClass('dragging');
+        
+        // Close preview when dragging starts
+        this.closePreview();
+        
         // console.log('Drag started:', this.draggedItem);
     }
 
@@ -490,6 +494,11 @@ class FileManager {
         const path = $item.data('path');
         const type = $item.data('type');
         
+        // Don't show preview if currently dragging
+        if (this.draggedItem) {
+            return;
+        }
+        
         // Only show preview for files
         if (type === 'file') {
             // Clear any existing timeout
@@ -509,6 +518,11 @@ class FileManager {
         if (this.hoverTimeout) {
             clearTimeout(this.hoverTimeout);
             this.hoverTimeout = null;
+        }
+        
+        // Don't hide preview if currently dragging
+        if (this.draggedItem) {
+            return;
         }
         
         // Check if mouse is moving to the preview panel
@@ -537,6 +551,11 @@ class FileManager {
     }
     
     handlePreviewPanelLeave() {
+        // Don't hide preview if currently dragging
+        if (this.draggedItem) {
+            return;
+        }
+        
         // Hide preview after a short delay if mouse leaves the preview panel
         if (this.hoverHideTimeout) {
             clearTimeout(this.hoverHideTimeout);
@@ -1191,6 +1210,11 @@ class FileManager {
     
     // Preview functionality
     showPreview(filePath) {
+        // Don't show preview if currently dragging
+        if (this.draggedItem) {
+            return;
+        }
+        
         // console.log('Showing preview for:', filePath);
         
         // Adjust layout
