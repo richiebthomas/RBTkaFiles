@@ -627,6 +627,23 @@ label[for="file-input"]:hover {
     align-items: center;
     flex: 1;
     min-width: 0; /* Allow text to truncate */
+    gap: 10px;
+}
+
+.preview-filename {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.preview-filename span {
+    font-weight: 500;
+    color: #495057;
+}
+
+.preview-filename .btn {
+    flex-shrink: 0;
 }
 
 .preview-icon {
@@ -659,28 +676,17 @@ label[for="file-input"]:hover {
     flex: 1;
     overflow-y: auto;
     padding: 15px;
-}
-
-.preview-footer {
-    padding: 15px;
-    border-top: 1px solid #e9ecef;
-    background: #f8f9fa;
-}
-
-.file-info {
-    margin-bottom: 10px;
-}
-
-.info-item {
     display: flex;
-    justify-content: space-between;
-    margin-bottom: 5px;
-    font-size: 0.9rem;
+    flex-direction: column;
 }
 
-.preview-actions {
-    text-align: center;
+#preview-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
+
+
 
 /* Preview Content Types */
 .preview-image {

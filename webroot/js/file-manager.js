@@ -9,6 +9,8 @@ class FileManager {
         this.selectedItem = null;
         this.notesVisible = false;
         this.currentNotes = '';
+        this.hoverTimeout = null;
+        this.hoverHideTimeout = null;
         this.init();
     }
 
@@ -55,13 +57,14 @@ class FileManager {
         // Roll number input change handler for auto-fill
         $(document).on('input', '#print-roll', (e) => this.handleRollNumberInput(e));
         
-        // File item clicks
+        // File item interactions - hover for preview, click for new tab
+        $(document).on('mouseenter', '.file-item', (e) => this.handleItemHover(e));
+        $(document).on('mouseleave', '.file-item', (e) => this.handleItemHoverLeave(e));
         $(document).on('click', '.file-item', (e) => this.handleItemClick(e));
         $(document).on('dblclick', '.file-item', (e) => this.handleItemDoubleClick(e));
         
         // Preview panel
         $(document).on('click', '.close-preview', () => this.closePreview());
-        $(document).on('click', '#preview-download', () => this.downloadCurrentPreview());
         
         // Drag and drop for moving items
         $(document).on('dragstart', '.file-item', (e) => this.handleDragStart(e));
@@ -480,6 +483,42 @@ class FileManager {
         });
     }
 
+    handleItemHover(e) {
+        const $item = $(e.currentTarget);
+        const path = $item.data('path');
+        const type = $item.data('type');
+        
+        // Only show preview for files
+        if (type === 'file') {
+            // Clear any existing timeout
+            if (this.hoverTimeout) {
+                clearTimeout(this.hoverTimeout);
+            }
+            
+            // Set new timeout for 1 seconds
+            this.hoverTimeout = setTimeout(() => {
+                this.showPreview(path);
+            }, 1000);
+        }
+    }
+    
+    handleItemHoverLeave(e) {
+        // Clear the hover timeout when mouse leaves
+        if (this.hoverTimeout) {
+            clearTimeout(this.hoverTimeout);
+            this.hoverTimeout = null;
+        }
+        
+        // Hide preview after a short delay to prevent flickering
+        if (this.hoverHideTimeout) {
+            clearTimeout(this.hoverHideTimeout);
+        }
+        
+        this.hoverHideTimeout = setTimeout(() => {
+            this.hidePreview();
+        }, 300);
+    }
+    
     handleItemClick(e) {
         e.preventDefault();
         const $item = $(e.currentTarget);
@@ -494,9 +533,10 @@ class FileManager {
             name: $item.find('.file-name').text()
         };
         
-        // If it's a file, show preview
+        // If it's a file, open in new tab instead of showing preview
         if (this.selectedItem.type === 'file') {
-            this.showPreview(this.selectedItem.path);
+            const previewUrl = '/api/preview/' + this.encodePath(this.selectedItem.path);
+            window.open(previewUrl, '_blank');
         } else if (this.selectedItem.type === 'folder') {
             // For folders, navigate into them on single click
             this.loadDirectory(this.selectedItem.path);
@@ -1128,7 +1168,7 @@ class FileManager {
         
         // Adjust layout
         $('#main-panel').removeClass('col-md-12').addClass('col-md-8');
-        $('#preview-panel').show();
+        $('#preview-panel').show().removeClass('hidden');
         
         // Show loading
         this.showPreviewLoading();
@@ -1173,8 +1213,20 @@ class FileManager {
     }
     
     closePreview() {
-        $('#preview-panel').hide();
-        $('#main-panel').removeClass('col-md-8').addClass('col-md-12');
+        $('#preview-panel').addClass('hidden');
+        setTimeout(() => {
+            $('#preview-panel').hide();
+            $('#main-panel').removeClass('col-md-8').addClass('col-md-12');
+        }, 300);
+        this.currentPreviewFile = null;
+    }
+    
+    hidePreview() {
+        $('#preview-panel').addClass('hidden');
+        setTimeout(() => {
+            $('#preview-panel').hide();
+            $('#main-panel').removeClass('col-md-8').addClass('col-md-12');
+        }, 300);
         this.currentPreviewFile = null;
     }
     
@@ -1203,21 +1255,16 @@ class FileManager {
         // console.log('Rendering preview for file:', file);
         this.currentPreviewFile = file;
         
-        // Update header
+        // Update header with filename and open in new tab button
         const icon = this.getFileIcon(file.name, file.mime_type);
         const previewUrl = '/api/preview/' + this.encodePath(file.path);
         $('.preview-icon').attr('class', icon + ' preview-icon');
         $('.preview-filename').html(`
-            <button class="btn btn-sm btn-outline-secondary" onclick="window.open('${previewUrl}', '_blank')">
-            <i class="fas fa-external-link-alt"></i> Open in new tab
+            <span class="me-2">${file.name}</span>
+            <button class="btn btn-sm btn-outline-primary" onclick="window.open('${previewUrl}', '_blank')">
+                <i class="fas fa-external-link-alt"></i> Open in new tab
             </button>
         `);
-        
-        // Update footer info
-        $('#preview-size').text(file.human_size);
-        $('#preview-modified').text(file.modified);
-        $('#preview-type').text(file.mime_type || 'Unknown');
-        $('#preview-download').show();
         
         this.hidePreviewLoading();
         
@@ -1247,9 +1294,6 @@ class FileManager {
         $('#preview-body').html(`
             <div class="image-preview">
                 <img src="${previewUrl}" alt="${file.name}" class="preview-image" />
-                <div class="preview-note mt-2 text-center">
-                    <small class="text-muted"><a href="${previewUrl}" target="_blank">🖼️ Open in new tab</a></small>
-                </div>
             </div>
         `);
     }
@@ -1258,9 +1302,6 @@ class FileManager {
         $('#preview-body').html(`
             <div class="pdf-preview">
                 <iframe src="${previewUrl}" class="preview-iframe" frameborder="0"></iframe>
-                <div class="preview-note mt-2 text-center">
-                    <small class="text-muted">PDF preview - <a href="${previewUrl}" target="_blank">📄 Open in new tab</a></small>
-                </div>
             </div>
         `);
     }
@@ -1295,10 +1336,6 @@ class FileManager {
                 <i class="${this.getFileIcon(file.name, file.mime_type)} fa-4x text-muted mb-3"></i>
                 <h5>${file.name}</h5>
                 <p class="text-muted">This file type cannot be previewed</p>
-                <p class="text-muted">Size: ${file.human_size}</p>
-                <button class="btn btn-primary" onclick="window.fileManager.downloadCurrentPreview()">
-                    <i class="fas fa-download"></i> Download to View
-                </button>
             </div>
         `);
     }
@@ -1311,11 +1348,7 @@ class FileManager {
                ['txt', 'md', 'json', 'xml', 'html', 'htm', 'css', 'js', 'php', 'py', 'java', 'c', 'cpp', 'sql'].includes(file.extension);
     }
     
-    downloadCurrentPreview() {
-        if (this.currentPreviewFile) {
-            this.downloadFile(this.currentPreviewFile.path);
-        }
-    }
+
     
     escapeHtml(text) {
         const div = document.createElement('div');

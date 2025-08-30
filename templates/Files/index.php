@@ -99,25 +99,7 @@ $this->assign('title', 'RBTkaFiles');
                     </div>
                 </div>
                 
-                <div class="preview-footer">
-                    <div class="file-info">
-                        <div class="info-item">
-                            <small class="text-muted">Size:</small>
-                            <span id="preview-size">-</span>
-                        </div>
-                        
-                        <div class="info-item">
-                            <small class="text-muted">Type:</small>
-                            <span id="preview-type">-</span>
-                        </div>
-                    </div>
-                    
-                    <div class="preview-actions">
-                        <button id="preview-download" class="btn btn-sm btn-primary" style="display: none;">
-                            <i class="fas fa-download"></i> Download
-                        </button>
-                    </div>
-                </div>
+
             </div>
         </div>
     </div>
@@ -227,7 +209,7 @@ $this->assign('title', 'RBTkaFiles');
                         <label for="print-roll">Roll Number <span class="text-danger">*</span></label>
                         <input type="text" id="print-roll" name="roll" class="form-control" 
                                placeholder="Enter your 7-digit roll number" value="50221" required maxlength="7">
-                        <small class="form-text text-muted">Complete the 7-digit number to auto-fill your name</small>
+                        
                     </div>
                     
                     <div class="form-group">
@@ -235,16 +217,14 @@ $this->assign('title', 'RBTkaFiles');
                         <input type="text" id="print-name" name="name" class="form-control" 
                                placeholder="Enter your full name" required>
                         <div id="user-status" class="mt-2" style="display: none;">
-                            <small class="text-success">
-                                <i class="fas fa-check-circle"></i> User found! Name auto-filled.
-                            </small>
+                            
                         </div>
                     </div>
                     
                     <div class="form-group">
                         <label for="print-lab">Lab Name (Optional)</label>
                         <input type="text" id="print-lab" name="lab" class="form-control" 
-                               placeholder="e.g., CS Lab, Physics Lab">
+                               placeholder="No need to type 'Lab'">
                     </div>
                     
                     <div id="print-error" class="alert alert-danger" style="display: none;"></div>
