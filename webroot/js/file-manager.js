@@ -58,7 +58,7 @@ updateBreadcrumbs(breadcrumbs){const $breadcrumb=$('#breadcrumb');$breadcrumb.em
             `);$breadcrumb.append($item)})}
 handleItemHover(e){const $item=$(e.currentTarget);const path=$item.data('path');const type=$item.data('type');if(this.draggedItem){return}
 if(type==='file'){if(this.hoverTimeout){clearTimeout(this.hoverTimeout)}
-this.hoverTimeout=setTimeout(()=>{this.showPreview(path)},1000)}}
+this.hoverTimeout=setTimeout(()=>{this.showPreview(path)},2000)}}
 handleItemHoverLeave(e){if(this.hoverTimeout){clearTimeout(this.hoverTimeout);this.hoverTimeout=null}
 if(this.draggedItem){return}
 const $relatedTarget=$(e.relatedTarget);const isMovingToPreview=$relatedTarget.closest('#preview-panel').length>0;if(!isMovingToPreview){if(this.hoverHideTimeout){clearTimeout(this.hoverHideTimeout)}
