@@ -44,6 +44,9 @@ class UsersTable extends Table
         $this->setPrimaryKey('id');
 
         $this->addBehavior('Timestamp');
-        $this->getSchema()->setColumnType('prints', 'json');
+        
+        if ($this->hasColumn('prints')) {
+            $this->getSchema()->setColumnType('prints', 'json');
+        }
     }
 }
