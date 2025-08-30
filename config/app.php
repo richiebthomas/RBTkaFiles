@@ -406,5 +406,13 @@ return [
      */
     'Session' => [
         'defaults' => 'php',
+        'timeout' => 0, // Session expires when browser closes
+        'ini' => [
+            'session.cookie_lifetime' => 0,
+            'session.use_cookies' => 1,
+            'session.use_only_cookies' => 1,
+            'session.cookie_httponly' => 1,
+            'session.cookie_secure' => 0, // Set to 1 if using HTTPS
+        ],
     ],
 ];

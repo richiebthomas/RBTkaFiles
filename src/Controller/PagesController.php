@@ -66,6 +66,11 @@ class PagesController extends AppController
         if ($path[0] === 'about') {
             $this->loadAboutPageStats();
         }
+        
+        // If this is the visits page, load visit statistics
+        if ($path[0] === 'visits') {
+            $this->loadVisitStats();
+        }
 
         $page = $subpage = null;
 
@@ -85,6 +90,68 @@ class PagesController extends AppController
             }
             throw new NotFoundException();
         }
+    }
+
+
+
+    /**
+     * Load visit statistics
+     */
+    private function loadVisitStats(): void
+    {
+        $totalVisits = $this->VisitTracker->getTotalVisits();
+        $todayVisits = $this->VisitTracker->getTodayVisits();
+        $thisWeekVisits = $this->VisitTracker->getThisWeekVisits();
+        
+        // Get weekly visits data for the chart
+        $weeklyVisitsData = $this->getWeeklyVisitsData();
+        
+        $this->set(compact('totalVisits', 'todayVisits', 'thisWeekVisits'));
+        $this->request = $this->request->withAttribute('totalVisits', $totalVisits);
+        $this->request = $this->request->withAttribute('todayVisits', $todayVisits);
+        $this->request = $this->request->withAttribute('thisWeekVisits', $thisWeekVisits);
+        $this->request = $this->request->withAttribute('weeklyVisitsData', $weeklyVisitsData);
+    }
+    
+    /**
+     * Get weekly visits data for the chart
+     */
+    private function getWeeklyVisitsData(): array
+    {
+        $visitsTable = $this->getTableLocator()->get('Visits');
+        
+        // Get the start of the current week (Monday)
+        $startOfWeek = new \DateTime('monday this week');
+        $endOfWeek = new \DateTime('sunday this week 23:59:59');
+        
+        // Get visits for each day of the week
+        $weeklyData = [];
+        $labels = [];
+        $data = [];
+        
+        for ($i = 0; $i < 7; $i++) {
+            $currentDate = clone $startOfWeek;
+            $currentDate->add(new \DateInterval("P{$i}D"));
+            
+            $nextDate = clone $currentDate;
+            $nextDate->add(new \DateInterval('P1D'));
+            
+            // Count visits for this day
+            $dayVisits = $visitsTable->find()
+                ->where([
+                    'created >=' => $currentDate->format('Y-m-d 00:00:00'),
+                    'created <' => $nextDate->format('Y-m-d 00:00:00')
+                ])
+                ->count();
+            
+            $labels[] = $currentDate->format('D');
+            $data[] = $dayVisits;
+        }
+        
+        return [
+            'labels' => $labels,
+            'data' => $data
+        ];
     }
 
     /**
@@ -134,5 +201,8 @@ class PagesController extends AppController
         // Set the data for the view
         $this->request = $this->request->withAttribute('fileCount', $fileCount);
         $this->request = $this->request->withAttribute('printStats', $printStats);
+        
+        // Load visit statistics
+        $this->loadVisitStats();
     }
 }

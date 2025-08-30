@@ -45,7 +45,7 @@
       transition: color 0.3s ease-in-out;
     }
     body {
-      background: linear-gradient(to right, #e3f2fd, #e3f2fd);
+      background: white;
     }
     :root {
       --primary-color: #007bff;
@@ -58,15 +58,11 @@
       background-color: var(--background-color);
       color: var(--text-color);
       min-height: 100vh;
-      padding: 2rem;
+      padding: 0;
     }
     .main-container {
       max-width: 1200px;
-      background: white;
-      border-radius: 1.25rem;
-      box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.1);
-      margin: 2rem auto;
-      padding: 2.5rem;
+      margin: 0 auto;
       opacity: 0;
       transform: translateY(20px);
       animation: fadeIn 0.5s ease-out forwards;
@@ -112,6 +108,7 @@
     .metric-tile {
       min-width: 120px;
     }
+
     .source-code-wrapper {
       background: #1e1e1e;
       border-radius: 0.75rem;
@@ -161,16 +158,237 @@
       display: none;
       animation: slideIn 0.3s ease-out;
     }
+
+    .bg-purple {
+      background-color: #6366f1 !important;
+    }
+    .hover-effect:hover {
+      background-color: #f8f9fa;
+      transform: translateX(5px);
+      transition: all 0.3s ease;
+    }
+    .rounded-3 {
+      border-radius: 1rem !important;
+    }
+    .card-header {
+      border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Minimalistic Analytics */
+    .analytics-minimal {
+      text-align: center;
+      margin: 3rem 0;
+    }
+
+    .analytics-heading {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #6c757d;
+      margin-bottom: 2rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .metrics-grid {
+      display: flex;
+      justify-content: center;
+      gap: 3rem;
+      flex-wrap: wrap;
+    }
+
+    .metric-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .metric-number {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #2c3e50;
+      line-height: 1;
+    }
+
+    .metric-text {
+      font-size: 0.85rem;
+      color: #6c757d;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 500;
+    }
+
+    /* Minimalistic Chart Container */
+    .chart-container {
+      text-align: center;
+      margin: 3rem 0;
+    }
+
+    .chart-heading {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #6c757d;
+      margin-bottom: 2rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .chart-wrapper {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+
+    /* Minimalistic Leaderboard */
+    .leaderboard-container {
+      text-align: center;
+      margin: 3rem 0;
+    }
+
+    .leaderboard-heading {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #6c757d;
+      margin-bottom: 2rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .leaderboard-list {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .leaderboard-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 0;
+      border-bottom: 1px solid #e9ecef;
+    }
+
+    .leaderboard-item:last-child {
+      border-bottom: none;
+    }
+
+    .rank {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #007bff;
+      min-width: 60px;
+      text-align: left;
+    }
+
+    .user-name {
+      flex: 1;
+      font-size: 1.1rem;
+      color: #2c3e50;
+      font-weight: 500;
+      text-align: left;
+      margin-left: 1rem;
+    }
+
+    .print-count {
+      font-size: 0.9rem;
+      color: #6c757d;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      min-width: 100px;
+      text-align: right;
+    }
+
+    .no-data {
+      padding: 2rem;
+      color: #6c757d;
+      font-style: italic;
+    }
+
+    /* Minimalistic Contribute Section */
+    .contribute-section {
+      text-align: center;
+      margin: 3rem 0;
+    }
+
+    .contribute-heading {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #6c757d;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .contribute-subtitle {
+      color: #6c757d;
+      font-size: 1rem;
+      margin-bottom: 2rem;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .contribute-links {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    .contribute-link {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.5rem;
+      background: #f8f9fa;
+      border-radius: 0.5rem;
+      text-decoration: none;
+      color: #2c3e50;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      border: 1px solid #e9ecef;
+    }
+
+    .contribute-link:hover {
+      background: #e9ecef;
+      transform: translateY(-2px);
+      box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+      color: #2c3e50;
+      text-decoration: none;
+    }
+
+    .contribute-link i {
+      font-size: 1.2rem;
+      color: #007bff;
+      width: 20px;
+      text-align: center;
+    }
+
+    .contribute-link span {
+      flex: 1;
+      text-align: left;
+    }
+
+    /* Responsive */
     @media (max-width: 768px) {
       body {
         padding: 1rem;
       }
       .main-container {
-        padding: 1.5rem;
-        margin: 1rem auto;
+        margin: 0 auto;
       }
       .title {
         font-size: 2rem;
+      }
+      .metrics-grid {
+        gap: 2rem;
+      }
+      .metric-number {
+        font-size: 2rem;
+      }
+      .chart-wrapper {
+        padding: 0.5rem;
       }
     }
   </style>
@@ -184,8 +402,7 @@
 $this->assign('title', 'About - RBTkaFiles');
 ?>
 
-<main class="main-container">
-    <h1 class="title text-center">Why RBTkaFiles?</h1>
+<h1 class="title text-center">Why RBTkaFiles?</h1>
 
     <div class="lead text-center mb-5">
         <p class="mb-4">
@@ -205,135 +422,201 @@ $this->assign('title', 'About - RBTkaFiles');
         </p>
     </div>
 
-    <!-- Metrics Card -->
-    <div class="metrics-card text-center">
-        <div class="h5 mb-3">
-            <i class="fas fa-chart-line me-2"></i>Site Analytics
+        <!-- Minimalistic Site Analytics -->
+    <div class="analytics-minimal">
+        <h3 class="analytics-heading">Site Analytics</h3>
+        
+        <div class="metrics-grid">
+            <?php
+            // Get total files count from database
+            $totalFiles = $this->getRequest()->getAttribute('fileCount');
+            
+            // Get print statistics from users table
+            $printStats = $this->getRequest()->getAttribute('printStats');
+            $totalPrints = $printStats['totalPrints'] ?? 0;
+            $topPrinters = $printStats['topPrinters'] ?? [];
+            
+            // Get visit statistics
+            $totalVisits = $this->getRequest()->getAttribute('totalVisits') ?? 0;
+            $todayVisits = $this->getRequest()->getAttribute('todayVisits') ?? 0;
+            $thisWeekVisits = $this->getRequest()->getAttribute('thisWeekVisits') ?? 0;
+            ?>
+            
+            <div class="metric-item">
+                <span class="metric-number"><?= number_format($totalFiles) ?></span>
+                <span class="metric-text">Files Hosted</span>
+            </div>
+            
+            <div class="metric-item">
+                <span class="metric-number"><?= number_format($totalPrints) ?></span>
+                <span class="metric-text">Prints Taken</span>
+            </div>
+            
+            <div class="metric-item">
+                <span class="metric-number"><?= number_format($todayVisits) ?></span>
+                <span class="metric-text">Visits Today</span>
+            </div>
+            
+            <div class="metric-item">
+                <span class="metric-number"><?= number_format($thisWeekVisits) ?></span>
+                <span class="metric-text">Visits This Week</span>
+            </div>
+            
+            <div class="metric-item">
+                <span class="metric-number"><?= number_format($totalVisits) ?></span>
+                <span class="metric-text">Total Visits</span>
+            </div>
         </div>
-        <?php
-        // Get total files count from database
-        $totalFiles = $this->getRequest()->getAttribute('fileCount');
-        
-        // Get print statistics from users table
-        $printStats = $this->getRequest()->getAttribute('printStats');
-        $totalPrints = $printStats['totalPrints'] ?? 0;
-        $topPrinters = $printStats['topPrinters'] ?? [];
-        
-        // Display metrics
-        echo '<div class="metric-row mb-3">';
-        echo '<div class="h4 text-warning fw-bold metric-tile">';
-        echo number_format($totalFiles) . ' Files';
-        echo '</div>';
-
-        echo '<div class="h4 text-info fw-bold metric-tile">';
-        echo number_format($totalPrints) . ' Prints Taken';
-        echo '</div>';
-        echo '</div>';
-        ?>
     </div>
 
-    <!-- Leaderboard Card -->
-    <div class="card mt-4 shadow-sm border-0 rounded-3 overflow-hidden">
-        <div class="card-header bg-primary bg-gradient text-center py-3">
-            <h4 class="mb-0 text-white fw-semibold">🏆 Print Leaderboard</h4>
-        </div>
-        <div class="card-body p-0">
-            <ul class="list-group list-group-flush">
-                <?php if (!empty($topPrinters)): ?>
-                    <?php foreach ($topPrinters as $index => $user): ?>
-                        <li class="list-group-item d-flex justify-content-between align-items-center py-3 hover-effect">
-                            <div class="d-flex align-items-center">
-                                <span class="fw-bold text-primary me-2">#<?= $index + 1; ?></span>
-                                <span class="text-dark"><?= h($user['name']); ?></span>
-                            </div>
-                            <span class="badge bg-purple rounded-pill px-3 py-2">
-                                <?= count($user['prints']); ?> prints
-                            </span>
-                        </li>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <li class="list-group-item text-center py-4">
-                        <div class="d-flex flex-column align-items-center">
-                            <i class="bi bi-exclamation-triangle fs-2 text-muted mb-2"></i>
-                            <span class="text-muted">No print data available</span>
-                        </div>
-                    </li>
-                <?php endif; ?>
-            </ul>
+    <!-- Weekly Visits Chart -->
+    <div class="chart-container">
+        <h3 class="chart-heading">Weekly Visits Trend</h3>
+        <div class="chart-wrapper">
+            <canvas id="weeklyVisitsChart" width="400" height="200"></canvas>
         </div>
     </div>
-</main>
 
-<style>
-.bg-purple {
-    background-color: #6366f1 !important;
-}
-.hover-effect:hover {
-    background-color: #f8f9fa;
-    transform: translateX(5px);
-    transition: all 0.3s ease;
-}
-.rounded-3 {
-    border-radius: 1rem !important;
-}
-.card-header {
-    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-}
-.main-container {
-    max-width: 1200px;
-    background: white;
-    border-radius: 1.25rem;
-    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.1);
-    margin: 2rem auto;
-    padding: 2.5rem;
-    opacity: 0;
-    transform: translateY(20px);
-    animation: fadeIn 0.5s ease-out forwards;
-}
-@keyframes fadeIn {
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-.title {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: var(--primary-color);
-    margin-bottom: 2rem;
-    position: relative;
-    padding-bottom: 0.5rem;
-}
-.title::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 4rem;
-    height: 3px;
-    background: var(--secondary-color);
-}
-.metrics-card {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-radius: 0.75rem;
-    padding: 1.5rem;
-    margin: 2rem auto;
-    width: fit-content;
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05);
-}
-.metric-row {
-    display: flex;
-    gap: 2rem;
-    justify-content: center;
-    flex-wrap: wrap;
-}
-.metric-tile {
-    min-width: 120px;
-}
-</style>
+    <!-- Print Leaderboard -->
+    <div class="leaderboard-container">
+        <h3 class="leaderboard-heading">Print Leaderboard</h3>
+        <div class="leaderboard-list">
+            <?php if (!empty($topPrinters)): ?>
+                <?php foreach ($topPrinters as $index => $user): ?>
+                    <div class="leaderboard-item">
+                        <div class="rank">#<?= $index + 1; ?></div>
+                        <div class="user-name"><?= h($user['name']); ?></div>
+                        <div class="print-count"><?= count($user['prints']); ?> prints</div>
+                    </div>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <div class="no-data">
+                    <span>No print data available</span>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <!-- Contribute to RBTkaFiles -->
+    <div class="contribute-section">
+        <h3 class="contribute-heading">Contribute to RBTkaFiles</h3>
+        <p class="contribute-subtitle">
+            Help make RBTkaFiles better for everyone! Your contributions make a real difference.
+        </p>
+        
+        <div class="contribute-links">
+            <a href="https://github.com/richiebthomas/RBTkaFiles/issues" target="_blank" class="contribute-link">
+                <i class="fas fa-bug"></i>
+                <span>Report Bugs</span>
+            </a>
+            
+            <a href="https://github.com/richiebthomas/RBTkaFiles/issues/new" target="_blank" class="contribute-link">
+                <i class="fas fa-lightbulb"></i>
+                <span>Request Features</span>
+            </a>
+            
+            <a href="https://github.com/richiebthomas/RBTkaFiles" target="_blank" class="contribute-link">
+                <i class="fas fa-code"></i>
+                <span>Write Code & Push</span>
+            </a>
+            
+            <a href="https://github.com/richiebthomas/RBTkaFiles" target="_blank" class="contribute-link">
+                <i class="fas fa-book"></i>
+                <span>Write Documentation</span>
+            </a>
+            
+            <a href="https://github.com/richiebthomas/RBTkaFiles" target="_blank" class="contribute-link">
+                <i class="fas fa-star"></i>
+                <span>Star the Project</span>
+            </a>
+        </div>
+    </div>
+
 <?php 
 // We don't need any JavaScript since we removed the storage chart
 ?>
+
+<!-- Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// Weekly Visits Chart
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('weeklyVisitsChart').getContext('2d');
+    
+    // Get weekly data from PHP
+    const weeklyData = <?= json_encode($this->getRequest()->getAttribute('weeklyVisitsData') ?? []) ?>;
+    
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: weeklyData.labels || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            datasets: [{
+                label: 'Visits',
+                data: weeklyData.data || [0, 0, 0, 0, 0, 0, 0],
+                borderColor: '#28a745',
+                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#28a745',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 6,
+                pointHoverRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    borderColor: '#28a745',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    displayColors: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: '#6c757d',
+                        font: {
+                            weight: '600'
+                        }
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: '#6c757d',
+                        font: {
+                            weight: '600'
+                        }
+                    }
+                }
+            },
+            elements: {
+                point: {
+                    hoverBackgroundColor: '#28a745'
+                }
+            }
+        }
+    });
+});
+</script>
 </body>
 </html>
