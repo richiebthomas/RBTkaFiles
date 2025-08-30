@@ -437,7 +437,7 @@ $this->assign('title', 'About - RBTkaFiles');
             $topPrinters = $printStats['topPrinters'] ?? [];
             
             // Get visit statistics
-            $totalVisits = $this->getRequest()->getAttribute('totalVisits') ?? 0;
+            $totalVisits = $this->getRequest()->getAttribute('totalVisits'+1650) ?? 0; //Adding visits from old website: rbt.free.nf
             $todayVisits = $this->getRequest()->getAttribute('todayVisits') ?? 0;
             $thisWeekVisits = $this->getRequest()->getAttribute('thisWeekVisits') ?? 0;
             ?>
