@@ -65,6 +65,8 @@ class FileManager {
         
         // Preview panel
         $(document).on('click', '.close-preview', () => this.closePreview());
+        $(document).on('mouseenter', '#preview-panel', () => this.handlePreviewPanelEnter());
+        $(document).on('mouseleave', '#preview-panel', () => this.handlePreviewPanelLeave());
         
         // Drag and drop for moving items
         $(document).on('dragstart', '.file-item', (e) => this.handleDragStart(e));
@@ -509,11 +511,36 @@ class FileManager {
             this.hoverTimeout = null;
         }
         
-        // Hide preview after a short delay to prevent flickering
+        // Check if mouse is moving to the preview panel
+        const $relatedTarget = $(e.relatedTarget);
+        const isMovingToPreview = $relatedTarget.closest('#preview-panel').length > 0;
+        
+        // Only hide preview if not moving to preview panel
+        if (!isMovingToPreview) {
+            // Hide preview after a short delay to prevent flickering
+            if (this.hoverHideTimeout) {
+                clearTimeout(this.hoverHideTimeout);
+            }
+            
+            this.hoverHideTimeout = setTimeout(() => {
+                this.hidePreview();
+            }, 300);
+        }
+    }
+    
+    handlePreviewPanelEnter() {
+        // Prevent preview from hiding when mouse enters the preview panel
+        if (this.hoverHideTimeout) {
+            clearTimeout(this.hoverHideTimeout);
+            this.hoverHideTimeout = null;
+        }
+    }
+    
+    handlePreviewPanelLeave() {
+        // Hide preview after a short delay if mouse leaves the preview panel
         if (this.hoverHideTimeout) {
             clearTimeout(this.hoverHideTimeout);
         }
-        
         this.hoverHideTimeout = setTimeout(() => {
             this.hidePreview();
         }, 300);
