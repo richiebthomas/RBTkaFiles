@@ -1020,50 +1020,133 @@ class FileManager {
             '<i class="fas fa-spinner fa-spin"></i> Processing...'
         );
         
-        $.ajax({
-            url: '/api/print',
-            method: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            xhrFields: {
-                responseType: 'blob'
-            },
-            success: (data, status, xhr) => {
-                // Create blob URL and open in new tab
-                const blob = new Blob([data], { type: 'application/pdf' });
-                const url = window.URL.createObjectURL(blob);
-                window.open(url, '_blank');
-                
-                // Clean up
-                setTimeout(() => window.URL.revokeObjectURL(url), 1000);
-                
-                $('#printModal').modal('hide');
-                this.showSuccess('PDF prepared for printing!');
-            },
-            error: (xhr) => {
-                let errorMessage = 'Failed to process PDF for printing';
-                
-                if (xhr.responseText) {
-                    try {
-                        const response = JSON.parse(xhr.responseText);
-                        if (response.message) {
-                            errorMessage = response.message;
-                        }
-                    } catch (e) {
-                        // Response is not JSON, use default message
+        // Clear any previous errors
+        this.showPrintError('');
+        
+        // Try blob approach first, fallback to regular if needed
+        const tryBlobApproach = () => {
+            $.ajax({
+                url: '/api/print',
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                xhrFields: {
+                    responseType: 'blob'
+                },
+                success: (data, status, xhr) => {
+                    console.log('Print response received:', {
+                        status: status,
+                        contentType: xhr.getResponseHeader('Content-Type'),
+                        contentLength: xhr.getResponseHeader('Content-Length'),
+                        dataSize: data.size,
+                        dataType: data.type
+                    });
+                    
+                    // Check if we actually got a PDF blob
+                    if (!data || data.size === 0) {
+                        this.showPrintError('Received empty response from server');
+                        return;
                     }
+                    
+                    try {
+                        // Create blob URL and open in new tab
+                        const blob = new Blob([data], { type: 'application/pdf' });
+                        const url = window.URL.createObjectURL(blob);
+                        
+                        // Open PDF in new tab
+                        const newWindow = window.open(url, '_blank');
+                        
+                        if (newWindow) {
+                            // Success - hide modal and show success message
+                            $('#printModal').modal('hide');
+                            this.showSuccess('PDF prepared for printing!');
+                            
+                            // Clean up blob URL after a delay
+                            setTimeout(() => {
+                                window.URL.revokeObjectURL(url);
+                            }, 5000); // Give more time for the PDF to load
+                        } else {
+                            // Popup blocked - show error
+                            this.showPrintError('Popup blocked! Please allow popups for this site and try again.');
+                            // Clean up blob URL immediately
+                            window.URL.revokeObjectURL(url);
+                        }
+                    } catch (error) {
+                        console.error('Error creating blob:', error);
+                        this.showPrintError('Failed to create PDF: ' + error.message);
+                    }
+                },
+                error: (xhr, status, error) => {
+                    console.error('Print error:', { xhr, status, error });
+                    
+                    // If blob approach fails, try fallback method
+                    console.log('Blob approach failed, trying fallback...');
+                    tryFallbackApproach();
+                },
+                complete: () => {
+                    // Re-enable submit button
+                    $('#btn-print-confirm').prop('disabled', false).html(
+                        '<i class="fas fa-print"></i> Print PDF'
+                    );
                 }
-                
-                this.showPrintError(errorMessage);
-            },
-            complete: () => {
-                // Re-enable submit button
-                $('#btn-print-confirm').prop('disabled', false).html(
-                    '<i class="fas fa-print"></i> Print PDF'
-                );
-            }
-        });
+            });
+        };
+        
+        // Fallback method - open PDF directly without blob
+        const tryFallbackApproach = () => {
+            console.log('Trying fallback approach...');
+            
+            // Create a temporary form to submit and open PDF
+            const tempForm = document.createElement('form');
+            tempForm.method = 'POST';
+            tempForm.action = '/api/print';
+            tempForm.target = '_blank';
+            tempForm.style.display = 'none';
+            
+            // Add form data
+            const fileInput = document.createElement('input');
+            fileInput.type = 'hidden';
+            fileInput.name = 'file';
+            fileInput.value = this.selectedItem.path;
+            tempForm.appendChild(fileInput);
+            
+            const nameInput = document.createElement('input');
+            nameInput.type = 'hidden';
+            nameInput.name = 'name';
+            nameInput.value = $('#print-name').val().trim();
+            tempForm.appendChild(nameInput);
+            
+            const rollInput = document.createElement('input');
+            rollInput.type = 'hidden';
+            rollInput.name = 'roll';
+            rollInput.value = $('#print-roll').val().trim();
+            tempForm.appendChild(rollInput);
+            
+            const labInput = document.createElement('input');
+            labInput.type = 'hidden';
+            labInput.name = 'lab';
+            labInput.value = $('#print-lab').val().trim();
+            tempForm.appendChild(labInput);
+            
+            // Submit form
+            document.body.appendChild(tempForm);
+            tempForm.submit();
+            document.body.removeChild(tempForm);
+            
+            // Hide modal and show success
+            $('#printModal').modal('hide');
+            this.showSuccess('PDF prepared for printing!');
+        };
+        
+        // Check if blob is supported and try the blob approach first
+        if (window.Blob && window.URL && window.URL.createObjectURL) {
+            console.log('Blob support detected, trying blob approach...');
+            tryBlobApproach();
+        } else {
+            console.log('Blob not supported, using fallback approach...');
+            tryFallbackApproach();
+        }
     }
     
     showPrintError(message) {
