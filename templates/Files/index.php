@@ -227,7 +227,7 @@ $this->assign('title', 'RBTkaFiles');
                                placeholder="No need to type 'Lab'">
                     </div>
                     
-                    <div id="print-error" class="alert alert-danger" style="display: none;"></div>
+                    
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
