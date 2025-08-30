@@ -159,11 +159,11 @@ $this->assign('title', 'RBTkaFiles');
 <!-- Context Menu -->
 <div id="context-menu" class="context-menu" style="display: none;">
     <ul>
-        <li><a href="#" id="ctx-download"><i class="fas fa-download"></i> Download</a></li>
-        <li><a href="#" id="ctx-print" style="display: none;"><i class="fas fa-print"></i> Print</a></li>
-        <li><a href="#" id="ctx-rename"><i class="fas fa-edit"></i> Rename</a></li>
+        <li><a href="javascript:void(0)" id="ctx-download"><i class="fas fa-download"></i> Download</a></li>
+        <li><a href="javascript:void(0)" id="ctx-print" style="display: none;"><i class="fas fa-print"></i> Print</a></li>
+        <li><a href="javascript:void(0)" id="ctx-rename"><i class="fas fa-edit"></i> Rename</a></li>
         <li class="divider"></li>
-        <li><a href="#" id="ctx-delete"><i class="fas fa-trash"></i> Delete</a></li>
+        <li><a href="javascript:void(0)" id="ctx-delete"><i class="fas fa-trash"></i> Delete</a></li>
     </ul>
 </div>
 
@@ -198,7 +198,7 @@ $this->assign('title', 'RBTkaFiles');
                     <span>&times;</span>
                 </button>
             </div>
-            <form id="print-form">
+            <form id="print-form" action="javascript:void(0)">
                 <div class="modal-body">
                     <p class="text-muted mb-3">
                         
