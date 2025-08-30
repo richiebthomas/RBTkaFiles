@@ -87,6 +87,15 @@ body {
     border-radius: 6px;
     overflow: hidden;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-bottom: 0; /* Remove bottom margin to keep loading spinner close */
+}
+
+/* Loading spinner positioning */
+#loading {
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-top: 8px; /* Small gap between table and loading spinner */
 }
 
 #file-table thead th {

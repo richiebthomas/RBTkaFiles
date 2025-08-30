@@ -42,18 +42,6 @@ $this->assign('title', 'RBTkaFiles');
 
             <!-- File Listing -->
             <div id="file-listing" class="list-group">
-                <div id="loading" class="text-center py-5">
-                    <div class="spinner-border" role="status">
-                        <span class="sr-only">Loading...</span>
-                    </div>
-                    <div class="mt-2">Loading files...</div>
-                </div>
-                
-                <div id="empty-folder" class="text-center py-5" style="display: none;">
-                    <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
-                    <p class="text-muted">This folder is empty</p>
-                </div>
-
                 <!-- Add table structure -->
                 <div class="table-responsive" id="file-table-wrapper">
                 <table id="file-table" class="table table-hover">
@@ -67,6 +55,19 @@ $this->assign('title', 'RBTkaFiles');
                         <!-- File items will be inserted here by JavaScript -->
                     </tbody>
                 </table>
+                </div>
+                
+                <!-- Loading spinner positioned below table headers -->
+                <div id="loading" class="text-center py-3">
+                    <div class="spinner-border" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                    <div class="mt-2">Loading files...</div>
+                </div>
+                
+                <div id="empty-folder" class="text-center py-5" style="display: none;">
+                    <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">This folder is empty</p>
                 </div>
             </div>
         </div>

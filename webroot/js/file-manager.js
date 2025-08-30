@@ -351,11 +351,10 @@ class FileManager {
         $tableBody.empty();
         
         if (response.items.length === 0) {
-            $('#file-table').hide();
             $('#empty-folder').show();
+            // Table headers remain visible even when empty
         } else {
             $('#empty-folder').hide();
-            $('#file-table').show();
             
             response.items.forEach(item => {
                 $tableBody.append(this.createFileItemElement(item));
@@ -834,7 +833,9 @@ class FileManager {
 
     showLoading() {
         $('#loading').show();
-        $('#file-grid, #empty-folder, #file-table').hide();
+        $('#file-grid, #empty-folder').hide();
+        // Don't hide the entire table - just clear the body content
+        $('#file-table-body').empty();
     }
 
     hideLoading() {
