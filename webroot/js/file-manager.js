@@ -11,6 +11,7 @@ class FileManager {
         this.currentNotes = '';
         this.hoverTimeout = null;
         this.hoverHideTimeout = null;
+        this.isProcessingMove = false;
         this.init();
     }
 
@@ -70,10 +71,10 @@ class FileManager {
         
         // Drag and drop for moving items
         $(document).on('dragstart', '.file-item', (e) => this.handleDragStart(e));
-        $(document).on('dragenter', '.drop-target, .breadcrumb-item a', (e) => this.handleDragEnter(e));
-        $(document).on('dragover', '.drop-target, .breadcrumb-item a', (e) => this.handleDragOver(e));
-        $(document).on('dragleave', '.drop-target, .breadcrumb-item a', (e) => this.handleDragLeave(e));
-        $(document).on('drop', '.drop-target, .breadcrumb-item a', (e) => this.handleDrop(e));
+        $(document).on('dragenter', '.drop-target', (e) => this.handleDragEnter(e));
+        $(document).on('dragover', '.drop-target', (e) => this.handleDragOver(e));
+        $(document).on('dragleave', '.drop-target', (e) => this.handleDragLeave(e));
+        $(document).on('drop', '.drop-target', (e) => this.handleDrop(e));
         $(document).on('dragend', '.file-item', (e) => this.handleDragEnd(e));
         
         // Breadcrumb navigation
@@ -220,6 +221,9 @@ class FileManager {
         
         if (!this.draggedItem) return;
         
+        // Prevent duplicate drop processing
+        if (this.isProcessingMove) return;
+        
         let targetPath = '';
         
         // Determine target path
@@ -246,6 +250,7 @@ class FileManager {
         $(e.currentTarget).removeClass('dragging');
         $('.drag-over-target').removeClass('drag-over-target');
         this.draggedItem = null;
+        this.isProcessingMove = false;
     }
 
     isValidDropTarget($target) {
@@ -273,6 +278,13 @@ class FileManager {
     }
 
     moveItem(sourcePath, targetPath) {
+        // Prevent duplicate move operations
+        if (this.isProcessingMove) {
+            return;
+        }
+        
+        this.isProcessingMove = true;
+        
         // console.log('Moving item:', sourcePath, 'to:', targetPath);
         
         $.ajax({
@@ -284,6 +296,7 @@ class FileManager {
             },
             dataType: 'json',
             success: (response) => {
+                this.isProcessingMove = false;
                 if (response.success) {
                     this.showSuccess('Item moved successfully');
                     this.loadDirectory(this.currentPath);
@@ -292,6 +305,7 @@ class FileManager {
                 }
             },
             error: (xhr) => {
+                this.isProcessingMove = false;
                 this.showError('Failed to move item: ' + xhr.statusText);
             }
         });
