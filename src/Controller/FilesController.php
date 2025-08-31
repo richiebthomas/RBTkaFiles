@@ -1125,7 +1125,7 @@ class FilesController extends AppController
             }
 
             // Get current prints or initialize new array
-            $prints = $user->prints ?: [];
+            $prints = $user->prints ? json_decode($user->prints, true) : [];
             
             // Add new print record
             $prints[] = [
@@ -1133,8 +1133,8 @@ class FilesController extends AppController
                 'name' => $name
             ];
 
-            // Update user prints
-            $user->prints = $prints;
+            // Save back as JSON
+            $user->prints = json_encode($prints);
             $this->Users->save($user);
 
         } catch (\Exception $e) {
