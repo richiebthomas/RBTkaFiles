@@ -15,16 +15,6 @@ class CreatePrintsTaken extends AbstractMigration
                 'null' => false,
                 'comment' => 'When the print was taken'
             ])
-            ->addColumn('name_used', 'string', [
-                'limit' => 255,
-                'null' => false,
-                'comment' => 'Name used for the print'
-            ])
-            ->addColumn('file_path', 'string', [
-                'limit' => 500,
-                'null' => true,
-                'comment' => 'Path of the file that was printed'
-            ])
             ->addColumn('created', 'datetime', [
                 'null' => false,
                 'default' => 'CURRENT_TIMESTAMP'

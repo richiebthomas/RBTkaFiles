@@ -643,8 +643,6 @@ class FilesController extends AppController
                 'print_history' => array_map(function($printJob) {
                     return [
                         'timestamp' => $printJob->timestamp->format('M j, Y g:i A'),
-                        'name_used' => $printJob->name_used,
-                        'file_path' => $printJob->file_path
                     ];
                 }, $printJobs),
                 'total_prints' => count($printJobs)
@@ -774,7 +772,7 @@ class FilesController extends AppController
             $this->saveOrUpdateUser($roll, $name);
 
             // Update print job tracking
-            $this->updatePrintJobs($roll, $name);
+            $this->updatePrintJobs($roll);
 
             // Process PDF with user details
             $modifiedPdfPath = $this->processPdfForPrint($fullPath, $name, $roll, $lab);
@@ -1171,7 +1169,7 @@ class FilesController extends AppController
     /**
      * Update print job tracking in database
      */
-    private function updatePrintJobs(string $roll, string $name): void
+    private function updatePrintJobs(string $roll): void
     {
         try {
             // Get or create user
@@ -1189,8 +1187,6 @@ class FilesController extends AppController
             $printJob = $this->PrintJobs->newEntity([
                 'user_id' => $user->id,
                 'timestamp' => new \Cake\I18n\DateTime(),
-                'name_used' => $name,
-                'file_path' => null, // Could be added later if needed
             ]);
 
             if (!$this->PrintJobs->save($printJob)) {

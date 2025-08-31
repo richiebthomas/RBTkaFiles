@@ -65,16 +65,6 @@ class PrintJobsTable extends Table
             ->dateTime('timestamp')
             ->notEmptyDateTime('timestamp');
 
-        $validator
-            ->scalar('name_used')
-            ->maxLength('name_used', 255)
-            ->notEmptyString('name_used');
-
-        $validator
-            ->scalar('file_path')
-            ->maxLength('file_path', 500)
-            ->allowEmptyString('file_path');
-
         return $validator;
     }
 

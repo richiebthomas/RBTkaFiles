@@ -11,8 +11,6 @@ use Cake\ORM\Entity;
  * @property int $id
  * @property int $user_id
  * @property \Cake\I18n\DateTime $timestamp
- * @property string $name_used
- * @property string|null $file_path
  * @property \Cake\I18n\DateTime $created
  * @property \Cake\I18n\DateTime $modified
  *
@@ -28,8 +26,6 @@ class PrintJob extends Entity
     protected array $_accessible = [
         'user_id' => true,
         'timestamp' => true,
-        'name_used' => true,
-        'file_path' => true,
         'created' => true,
         'modified' => true,
     ];
