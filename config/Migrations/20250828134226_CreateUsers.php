@@ -11,10 +11,7 @@ class CreateUsers extends AbstractMigration
             ->addColumn('name', 'string', ['limit' => 255, 'null' => false])
             ->addColumn('created', 'datetime', ['null' => false])
             ->addColumn('modified', 'datetime', ['null' => false])
-            ->addColumn('prints', 'text', [
-                'null' => false,
-                'comment' => 'Serialized/JSON array of prints',
-            ])
+            
             ->create();
     }
 }

@@ -486,7 +486,7 @@ $this->assign('title', 'About - RBTkaFiles');
                     <div class="leaderboard-item">
                         <div class="rank">#<?= $index + 1; ?></div>
                         <div class="user-name"><?= h($user['name']); ?></div>
-                        <div class="print-count"><?= count($user['prints']); ?> prints</div>
+                        <div class="print-count"><?= $user['print_count']; ?> prints</div>
                     </div>
                 <?php endforeach; ?>
             <?php else: ?>

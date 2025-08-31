@@ -28,18 +28,7 @@ class User extends Entity
     protected array $_accessible = [
         'roll_number' => true,
         'name' => true,
-        'prints' => true,
         'created' => true,
         'modified' => true,
     ];
-
-    protected function _getPrints($prints)
-    {
-        return is_string($prints) ? json_decode($prints, true) : $prints;
-    }
-
-    protected function _setPrints($prints)
-    {
-        return is_array($prints) ? json_encode($prints) : $prints;
-    }
 }

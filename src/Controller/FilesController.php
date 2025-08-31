@@ -7,6 +7,7 @@ use Cake\Http\Exception\NotFoundException;
 use Cake\Http\Exception\BadRequestException;
 use Cake\Http\Response;
 use Cake\Utility\Text;
+use App\Model\Table\PrintJobsTable;
 
 /**
  * Files Controller
@@ -29,6 +30,9 @@ class FilesController extends AppController
         
         // Load the DirectoryNotes table
         $this->DirectoryNotes = $this->fetchTable('DirectoryNotes');
+        
+        // Load the PrintJobs table
+        $this->PrintJobs = $this->fetchTable('PrintJobs');
         
         // Set response headers for AJAX requests
         if ($this->request->is(['ajax', 'json'])) {
@@ -601,6 +605,63 @@ class FilesController extends AppController
     }
 
     /**
+     * Get user's print history
+     */
+    public function getUserPrints(): Response
+    {
+        $this->request->allowMethod(['post']);
+
+        try {
+            $data = $this->request->getData();
+            $rollNumber = trim($data['roll_number'] ?? '');
+
+            if (empty($rollNumber)) {
+                throw new BadRequestException('Roll number is required');
+            }
+
+            // Get user
+            $user = $this->Users->find()
+                ->where(['roll_number' => $rollNumber])
+                ->first();
+
+            if (!$user) {
+                return $this->jsonResponse([
+                    'success' => false,
+                    'message' => 'User not found'
+                ]);
+            }
+
+            // Get print history
+            $printJobs = $this->PrintJobs->findByUserId($user->id)->toArray();
+
+            $response = [
+                'success' => true,
+                'user' => [
+                    'roll_number' => $user->roll_number,
+                    'name' => $user->name
+                ],
+                'print_history' => array_map(function($printJob) {
+                    return [
+                        'timestamp' => $printJob->timestamp->format('M j, Y g:i A'),
+                        'name_used' => $printJob->name_used,
+                        'file_path' => $printJob->file_path
+                    ];
+                }, $printJobs),
+                'total_prints' => count($printJobs)
+            ];
+
+            return $this->jsonResponse($response);
+
+        } catch (\Exception $e) {
+            $this->log('Error in getUserPrints: ' . $e->getMessage(), 'error');
+            return $this->jsonResponse([
+                'success' => false,
+                'message' => 'Error getting print history: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
      * Lookup user by roll number
      */
     public function lookupUser(): Response
@@ -1124,18 +1185,17 @@ class FilesController extends AppController
                 return;
             }
 
-            // Get current prints or initialize new array
-            $prints = $user->prints ?: [];
-            
-            // Add new print record
-            $prints[] = [
-                'timestamp' => date('Y-m-d H:i:s'),
-                'name' => $name
-            ];
+            // Create new print job record
+            $printJob = $this->PrintJobs->newEntity([
+                'user_id' => $user->id,
+                'timestamp' => new \Cake\I18n\DateTime(),
+                'name_used' => $name,
+                'file_path' => null, // Could be added later if needed
+            ]);
 
-            // Update user prints (entity will handle JSON conversion automatically)
-            $user->prints = $prints;
-            $this->Users->save($user);
+            if (!$this->PrintJobs->save($printJob)) {
+                $this->log('Failed to save print job: ' . json_encode($printJob->getErrors()), 'error');
+            }
 
         } catch (\Exception $e) {
             $this->log('Error updating print jobs: ' . $e->getMessage(), 'error');
@@ -1157,9 +1217,6 @@ class FilesController extends AppController
                 // Update existing user's name if different
                 if ($user->name !== $name) {
                     $user->name = $name;
-                    if (!isset($user->prints)) {
-                        $user->prints = [];
-                    }
                     $this->Users->save($user);
                     $this->log("Updated user name for roll number {$rollNumber}: {$name}", 'info');
                 }
@@ -1168,7 +1225,6 @@ class FilesController extends AppController
                 $user = $this->Users->newEntity([
                     'roll_number' => $rollNumber,
                     'name' => $name,
-                    'prints' => []
                 ]);
                 $this->Users->save($user);
                 $this->log("Created new user: {$rollNumber} - {$name}", 'info');

@@ -20,19 +20,10 @@ class UsersTable extends Table
         $this->setPrimaryKey('id');
 
         $this->addBehavior('Timestamp');
-    }
 
-    /**
-     * Override schema to force JSON type mapping
-     */
-    public function getSchema(): TableSchemaInterface
-    {
-        $schema = parent::getSchema();
-
-        if ($schema->hasColumn('prints')) {
-            $schema = $schema->setColumnType('prints', 'json');
-        }
-
-        return $schema;
+        $this->hasMany('PrintJobs', [
+            'foreignKey' => 'user_id',
+            'className' => 'PrintJobs',
+        ]);
     }
 }

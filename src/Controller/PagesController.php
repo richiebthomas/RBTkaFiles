@@ -164,34 +164,31 @@ class PagesController extends AppController
             ->where(['type' => 'file'])
             ->count();
 
-        // Get print statistics
-        $users = $this->Users->find()
-            ->select(['id', 'name', 'roll_number', 'prints'])
-            ->all();
-
-        $totalPrints = 0;
+        // Get print statistics from PrintJobs table
+        $printJobsTable = $this->getTableLocator()->get('PrintJobs');
+        
+        // Get total prints count
+        $totalPrints = $printJobsTable->find()->count();
+        
+        // Get top printers with their print counts
+        $topPrintersQuery = $printJobsTable->find()
+            ->select([
+                'user_id',
+                'print_count' => 'COUNT(*)'
+            ])
+            ->group(['user_id'])
+            ->order(['print_count' => 'DESC'])
+            ->limit(10);
+        
         $topPrinters = [];
-
-        foreach ($users as $user) {
-            if (!empty($user->prints)) {
-                $printCount = count($user->prints);
-                $totalPrints += $printCount;
-
-                $topPrinters[] = [
-                    'name' => $user->name,
-                    'roll_number' => $user->roll_number,
-                    'prints' => $user->prints
-                ];
-            }
+        foreach ($topPrintersQuery as $row) {
+            $user = $this->Users->get($row->user_id);
+            $topPrinters[] = [
+                'name' => $user->name,
+                'roll_number' => $user->roll_number,
+                'print_count' => $row->print_count
+            ];
         }
-
-        // Sort users by print count
-        usort($topPrinters, function($a, $b) {
-            return count($b['prints']) - count($a['prints']);
-        });
-
-        // Take top 10
-        $topPrinters = array_slice($topPrinters, 0, 10);
 
         $printStats = [
             'totalPrints' => $totalPrints,
