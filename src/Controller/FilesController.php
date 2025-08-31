@@ -1125,7 +1125,14 @@ class FilesController extends AppController
             }
 
             // Get current prints or initialize new array
-            $prints = $user->prints ? json_decode($user->prints, true) : [];
+            $prints = [];
+            if ($user->prints) {
+                if (is_string($user->prints)) {
+                    $prints = json_decode($user->prints, true) ?: [];
+                } elseif (is_array($user->prints)) {
+                    $prints = $user->prints;
+                }
+            }
             
             // Add new print record
             $prints[] = [
