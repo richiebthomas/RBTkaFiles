@@ -67,8 +67,66 @@ handlePreviewPanelEnter(){if(this.hoverHideTimeout){clearTimeout(this.hoverHideT
 handlePreviewPanelLeave(){if(this.draggedItem){return}
 if(this.hoverHideTimeout){clearTimeout(this.hoverHideTimeout)}
 this.hoverHideTimeout=setTimeout(()=>{this.hidePreview()},300)}
-handleItemClick(e){e.preventDefault();const $item=$(e.currentTarget);$('.file-item').removeClass('selected');$item.addClass('selected');this.selectedItem={path:$item.data('path'),type:$item.data('type'),name:$item.find('.file-name').text()};if(this.selectedItem.type==='file'){const previewUrl='/api/preview/'+this.encodePath(this.selectedItem.path);window.open(previewUrl,'_blank')}else if(this.selectedItem.type==='folder'){this.loadDirectory(this.selectedItem.path);this.closePreview()}else{this.closePreview()}}
-handleItemDoubleClick(e){e.preventDefault();const $item=$(e.currentTarget);const type=$item.data('type');const path=$item.data('path');if(type==='folder'){this.loadDirectory(path)}else{const previewUrl='/api/preview/'+this.encodePath(path);window.open(previewUrl,'_blank')}}
+handleItemClick(e){
+    e.preventDefault();
+    const $item=$(e.currentTarget);
+    $('.file-item').removeClass('selected');
+    $item.addClass('selected');
+    this.selectedItem={
+        path:$item.data('path'),
+        type:$item.data('type'),
+        name:$item.find('.file-name').text()
+    };
+    
+    if(this.selectedItem.type==='file'){
+        // Determine the preview URL based on file type
+        let previewUrl;
+        if(this.isOfficeFile(this.selectedItem)){
+            // Use Google Docs Viewer for Office files
+            const baseUrl=window.location.origin;
+            const apiUrl=baseUrl+'/api/preview/'+this.encodePath(this.selectedItem.path);
+            previewUrl='https://docs.google.com/gview?url='+encodeURIComponent(apiUrl)+'&embedded=true';
+        }else{
+            // Use direct API preview for other files
+            previewUrl='/api/preview/'+this.encodePath(this.selectedItem.path);
+        }
+        window.open(previewUrl,'_blank');
+    }else if(this.selectedItem.type==='folder'){
+        this.loadDirectory(this.selectedItem.path);
+        this.closePreview();
+    }else{
+        this.closePreview();
+    }
+}
+handleItemDoubleClick(e){
+    e.preventDefault();
+    const $item=$(e.currentTarget);
+    const type=$item.data('type');
+    const path=$item.data('path');
+    
+    if(type==='folder'){
+        this.loadDirectory(path);
+    }else{
+        // Determine the preview URL based on file type
+        let previewUrl;
+        const fileItem={
+            path:path,
+            type:type,
+            name:$item.find('.file-name').text()
+        };
+        
+        if(this.isOfficeFile(fileItem)){
+            // Use Google Docs Viewer for Office files
+            const baseUrl=window.location.origin;
+            const apiUrl=baseUrl+'/api/preview/'+this.encodePath(path);
+            previewUrl='https://docs.google.com/gview?url='+encodeURIComponent(apiUrl)+'&embedded=true';
+        }else{
+            // Use direct API preview for other files
+            previewUrl='/api/preview/'+this.encodePath(path);
+        }
+        window.open(previewUrl,'_blank');
+    }
+}
 navigateToPath(e){e.preventDefault();const path=$(e.currentTarget).data('path');this.loadDirectory(path)}
 showCreateFolderModal(){$('#folder-name').val('');$('#folder-name-error').hide();$('#createFolderModal').modal('show');setTimeout(()=>$('#folder-name').focus(),500)}
 createFolder(){const name=$('#folder-name').val().trim();if(!name){this.showModalError('#folder-name-error','Folder name is required');return}
@@ -84,7 +142,10 @@ showContextMenu(e){e.preventDefault();const $item=$(e.currentTarget);this.select
 hideContextMenu(){$('#context-menu').hide()}
 downloadItem(){if(this.selectedItem&&this.selectedItem.type==='file'){this.downloadFile(this.selectedItem.path)}
 this.hideContextMenu()}
-downloadFile(path){window.location.href=`/api/download/${this.encodePath(path)}`}
+downloadFile(path){
+    // Always download using direct API URL for context menu download button
+    window.location.href = `/api/download/${this.encodePath(path)}`;
+}
 showRenameModal(){if(!this.selectedItem)return;const currentName=this.selectedItem.name;let baseName=currentName;let extension='';if(this.selectedItem.type==='file'){const lastDot=currentName.lastIndexOf('.');if(lastDot!==-1&&lastDot!==0){baseName=currentName.substring(0,lastDot);extension=currentName.substring(lastDot)}}
 $('#rename-input').val(baseName);$('#rename-error').hide();if(this.selectedItem.type==='file'&&extension){$('#rename-extension-info').html(`
                 <small class="text-muted">
@@ -194,16 +255,26 @@ renderPreview(file){
     `);
     
     this.hidePreviewLoading();
-    if(file.is_previewable){
+    console.log('renderPreview - file.is_previewable:', file.is_previewable);
+    console.log('renderPreview - this.isOfficeFile(file):', this.isOfficeFile(file));
+    
+    // Check if file is previewable OR if it's an Office file (which we can preview with Google Docs Viewer)
+    if(file.is_previewable || this.isOfficeFile(file)){
+        console.log('Calling loadPreviewContent for:', file.name);
         this.loadPreviewContent(file)
     }else{
+        console.log('Calling showNonPreviewableFile for:', file.name);
         this.showNonPreviewableFile(file)
     }
 }
 loadPreviewContent(file){
+    console.log('loadPreviewContent called with file:', file);
+    console.log('isOfficeFile result:', this.isOfficeFile(file));
+    
     const previewUrl='/api/preview/'+this.encodePath(file.path);
     
     if(this.isOfficeFile(file)){
+        console.log('Showing Office preview for:', file.name);
         this.showOfficePreview(file);
     }else if(file.mime_type&&file.mime_type.startsWith('image/')){
         this.showImagePreview(previewUrl,file);
@@ -212,6 +283,7 @@ loadPreviewContent(file){
     }else if(this.isTextFile(file)){
         this.showTextPreview(previewUrl,file);
     }else{
+        console.log('Showing non-previewable file for:', file.name);
         this.showNonPreviewableFile(file);
     }
 }
@@ -253,6 +325,11 @@ showNonPreviewableFile(file){$('#preview-body').html(`
 isTextFile(file){if(!file.mime_type)return!1;return file.mime_type.startsWith('text/')||['application/json','application/xml','application/javascript'].includes(file.mime_type)||['txt','md','json','xml','html','htm','css','js','php','py','java','c','cpp','sql'].includes(file.extension)}
 
 isOfficeFile(file){
+    console.log('isOfficeFile called with:', file);
+    console.log('file.mime_type:', file.mime_type);
+    console.log('file.name:', file.name);
+    console.log('file.extension:', file.extension);
+    
     if(!file.mime_type)return!1;
     const officeMimeTypes=[
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
@@ -267,7 +344,18 @@ isOfficeFile(file){
         'text/csv', // .csv
         'application/rtf' // .rtf
     ];
-    return officeMimeTypes.includes(file.mime_type)||['docx','xlsx','pptx','doc','xls','ppt','odt','ods','odp','csv','rtf'].includes(file.extension);
+    
+    // Extract extension from filename if not provided
+    const extension = file.extension || (file.name ? file.name.toLowerCase().split('.').pop() : '');
+    console.log('Extracted extension:', extension);
+    
+    const mimeTypeMatch = officeMimeTypes.includes(file.mime_type);
+    const extensionMatch = ['docx','xlsx','pptx','doc','xls','ppt','odt','ods','odp','csv','rtf'].includes(extension);
+    
+    console.log('MIME type match:', mimeTypeMatch);
+    console.log('Extension match:', extensionMatch);
+    
+    return mimeTypeMatch || extensionMatch;
 }
 escapeHtml(text){const div=document.createElement('div');div.textContent=text;return div.innerHTML}
 showNotes(notes){const notesSection=$('#notes-section');const notesList=notesSection.find('#notes-list');notesSection.show();notesList.empty();if(Array.isArray(notes)&&notes.length>0){notes.forEach(note=>{notesList.append(this.createNoteElement(note))})}else{notesList.html('<p class="text-muted text-center">No notes yet. Click "Add Note" to create one.</p>')}}
