@@ -170,7 +170,18 @@ showPreviewError(message){this.hidePreviewLoading();$('#preview-body').html(`
 renderPreview(file){
     this.currentPreviewFile=file;
     const icon=this.getFileIcon(file.name,file.mime_type);
-    const previewUrl='/api/preview/'+this.encodePath(file.path);
+    
+    // Determine the preview URL based on file type
+    let previewUrl;
+    if(this.isOfficeFile(file)){
+        // Use Google Docs Viewer for Office files
+        const baseUrl=window.location.origin;
+        const apiUrl=baseUrl+'/api/preview/'+this.encodePath(file.path);
+        previewUrl='https://docs.google.com/gview?url='+encodeURIComponent(apiUrl)+'&embedded=true';
+    }else{
+        // Use direct API preview for other files
+        previewUrl='/api/preview/'+this.encodePath(file.path);
+    }
     
     $('.preview-icon').attr('class',icon+' preview-icon');
     $('.preview-filename').html(`
@@ -189,7 +200,33 @@ renderPreview(file){
         this.showNonPreviewableFile(file)
     }
 }
-loadPreviewContent(file){const previewUrl='/api/preview/'+this.encodePath(file.path);if(file.mime_type&&file.mime_type.startsWith('image/')){this.showImagePreview(previewUrl,file)}else if(file.mime_type==='application/pdf'){this.showPdfPreview(previewUrl,file)}else if(this.isTextFile(file)){this.showTextPreview(previewUrl,file)}else{this.showNonPreviewableFile(file)}}
+loadPreviewContent(file){
+    const previewUrl='/api/preview/'+this.encodePath(file.path);
+    
+    if(this.isOfficeFile(file)){
+        this.showOfficePreview(file);
+    }else if(file.mime_type&&file.mime_type.startsWith('image/')){
+        this.showImagePreview(previewUrl,file);
+    }else if(file.mime_type==='application/pdf'){
+        this.showPdfPreview(previewUrl,file);
+    }else if(this.isTextFile(file)){
+        this.showTextPreview(previewUrl,file);
+    }else{
+        this.showNonPreviewableFile(file);
+    }
+}
+
+showOfficePreview(file){
+    const baseUrl=window.location.origin;
+    const apiUrl=baseUrl+'/api/preview/'+this.encodePath(file.path);
+    const googleDocsUrl='https://docs.google.com/gview?url='+encodeURIComponent(apiUrl)+'&embedded=true';
+    
+    $('#preview-body').html(`
+        <div class="office-preview">
+            <iframe src="${googleDocsUrl}" class="preview-iframe" frameborder="0"></iframe>
+        </div>
+    `);
+}
 showImagePreview(previewUrl,file){$('#preview-body').html(`
             <div class="image-preview">
                 <img src="${previewUrl}" alt="${file.name}" class="preview-image" />
@@ -214,6 +251,24 @@ showNonPreviewableFile(file){$('#preview-body').html(`
             </div>
         `)}
 isTextFile(file){if(!file.mime_type)return!1;return file.mime_type.startsWith('text/')||['application/json','application/xml','application/javascript'].includes(file.mime_type)||['txt','md','json','xml','html','htm','css','js','php','py','java','c','cpp','sql'].includes(file.extension)}
+
+isOfficeFile(file){
+    if(!file.mime_type)return!1;
+    const officeMimeTypes=[
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
+        'application/msword', // .doc
+        'application/vnd.ms-excel', // .xls
+        'application/vnd.ms-powerpoint', // .ppt
+        'application/vnd.oasis.opendocument.text', // .odt
+        'application/vnd.oasis.opendocument.spreadsheet', // .ods
+        'application/vnd.oasis.opendocument.presentation', // .odp
+        'text/csv', // .csv
+        'application/rtf' // .rtf
+    ];
+    return officeMimeTypes.includes(file.mime_type)||['docx','xlsx','pptx','doc','xls','ppt','odt','ods','odp','csv','rtf'].includes(file.extension);
+}
 escapeHtml(text){const div=document.createElement('div');div.textContent=text;return div.innerHTML}
 showNotes(notes){const notesSection=$('#notes-section');const notesList=notesSection.find('#notes-list');notesSection.show();notesList.empty();if(Array.isArray(notes)&&notes.length>0){notes.forEach(note=>{notesList.append(this.createNoteElement(note))})}else{notesList.html('<p class="text-muted text-center">No notes yet. Click "Add Note" to create one.</p>')}}
 createNoteElement(note){const date=new Date(note.modified||note.created);const formattedDate=date.toLocaleString();const contentLength=note.content.length;const needsReadMore=contentLength>100;return $(`

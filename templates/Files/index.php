@@ -942,6 +942,26 @@ body {
     justify-content: center;
 }
 
+/* Office Preview Styles */
+.office-preview {
+    text-align: center;
+}
+
+.office-preview .preview-iframe {
+    width: 100%;
+    height: 500px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive adjustments for office preview */
+@media (max-width: 768px) {
+    .office-preview .preview-iframe {
+        height: 300px;
+    }
+}
+
 /* Responsive text sizing */
 @media (max-width: 768px) {
     .note-content {
