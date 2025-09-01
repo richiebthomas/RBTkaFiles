@@ -476,9 +476,9 @@ $this->assign('title', 'About - RBTkaFiles');
             <?php 
             $weeklyData = $this->getRequest()->getAttribute('weeklyVisitsData') ?? [];
             if (!empty($weeklyData['labels'])) {
-                $startDate = new \DateTime('monday this week');
-                $today = new \DateTime('today');
-                $endDate = min($today, new \DateTime('sunday this week'));
+                $endDate = new \DateTime('today');
+                $startDate = clone $endDate;
+                $startDate->sub(new \DateInterval('P6D'));
                 echo '<small class="text-muted d-block mt-2">' . 
                      $startDate->format('M j') . ' - ' . $endDate->format('M j, Y') . 
                      '</small>';

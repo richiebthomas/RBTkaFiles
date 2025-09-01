@@ -120,19 +120,17 @@ class PagesController extends AppController
     {
         $visitsTable = $this->getTableLocator()->get('Visits');
         
-        // Get the start of the current week (Monday)
-        $startOfWeek = new \DateTime('monday this week');
-        $today = new \DateTime('today');
+        // Get the last 7 days instead of current week
+        $endDate = new \DateTime('today');
+        $startDate = clone $endDate;
+        $startDate->sub(new \DateInterval('P6D')); // Go back 6 days to get 7 total days
         
-        // Only show dates up to today, not future dates
-        $endDate = min($today, new \DateTime('sunday this week 23:59:59'));
-        
-        // Get visits for each day of the week up to today
+        // Get visits for each of the last 7 days
         $weeklyData = [];
         $labels = [];
         $data = [];
         
-        $currentDate = clone $startOfWeek;
+        $currentDate = clone $startDate;
         $dayCount = 0;
         
         while ($currentDate <= $endDate && $dayCount < 7) {
