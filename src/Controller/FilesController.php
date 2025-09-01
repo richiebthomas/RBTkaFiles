@@ -459,15 +459,38 @@ class FilesController extends AppController
         }
 
         if ($item->isFile()) {
-            // Delete physical file
+            // Move physical file to deleted subdirectory instead of deleting it
             $uploadPath = $this->getUploadPath();
+            $deletedDir = $uploadPath . DS . 'deleted';
             $fullPath = $uploadPath . DS . $item->filename_on_disk;
+            
+            // Create deleted directory if it doesn't exist
+            if (!is_dir($deletedDir)) {
+                mkdir($deletedDir, 0755, true);
+            }
+            
             if (file_exists($fullPath)) {
-                unlink($fullPath);
+                // Create deleted filename: deleted_originalname.extension
+                $pathInfo = pathinfo($item->name);
+                $deletedFilename = 'deleted_' . $pathInfo['basename'];
+                $deletedPath = $deletedDir . DS . $deletedFilename;
+                
+                // Check if deleted filename already exists, add counter if needed
+                $counter = 1;
+                while (file_exists($deletedPath)) {
+                    $deletedFilename = 'deleted_' . $pathInfo['filename'] . '_' . $counter . '.' . $pathInfo['extension'];
+                    $deletedPath = $deletedDir . DS . $deletedFilename;
+                    $counter++;
+                }
+                
+                // Move the file to deleted directory
+                if (!rename($fullPath, $deletedPath)) {
+                    $this->log('Warning: Failed to move file to deleted directory: ' . $fullPath, 'warning');
+                }
             }
         } else {
-            // Delete all children recursively
-            $this->deleteChildrenRecursively($path);
+            // For folders, recursively move all child files to deleted directory
+            $this->renameChildrenRecursively($path);
         }
 
         if ($this->FileItems->delete($item)) {
@@ -1106,7 +1129,7 @@ class FilesController extends AppController
         }
     }
 
-    private function deleteChildrenRecursively(string $path): void
+    private function renameChildrenRecursively(string $path): void
     {
         $children = $this->FileItems->find()
             ->where(['path LIKE' => $path . '/%'])
@@ -1114,12 +1137,38 @@ class FilesController extends AppController
 
         foreach ($children as $child) {
             if ($child->isFile()) {
+                // Move physical file to deleted subdirectory instead of deleting it
                 $uploadPath = $this->getUploadPath();
+                $deletedDir = $uploadPath . DS . 'deleted';
                 $fullPath = $uploadPath . DS . $child->filename_on_disk;
+                
+                // Create deleted directory if it doesn't exist
+                if (!is_dir($deletedDir)) {
+                    mkdir($deletedDir, 0755, true);
+                }
+                
                 if (file_exists($fullPath)) {
-                    unlink($fullPath);
+                    // Create deleted filename: deleted_originalname.extension
+                    $pathInfo = pathinfo($child->name);
+                    $deletedFilename = 'deleted_' . $pathInfo['basename'];
+                    $deletedPath = $deletedDir . DS . $deletedFilename;
+                    
+                    // Check if deleted filename already exists, add counter if needed
+                    $counter = 1;
+                    while (file_exists($deletedPath)) {
+                        $deletedFilename = 'deleted_' . $pathInfo['filename'] . '__' . $counter . '.' . $pathInfo['extension'];
+                        $deletedPath = $deletedDir . DS . $deletedFilename;
+                        $counter++;
+                    }
+                    
+                    // Move the file to deleted directory
+                    if (!rename($fullPath, $deletedPath)) {
+                        $this->log('Warning: Failed to move child file to deleted directory: ' . $fullPath, 'warning');
+                    }
                 }
             }
+            
+            // Delete the database record
             $this->FileItems->delete($child);
         }
     }
