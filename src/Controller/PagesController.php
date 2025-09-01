@@ -122,17 +122,20 @@ class PagesController extends AppController
         
         // Get the start of the current week (Monday)
         $startOfWeek = new \DateTime('monday this week');
-        $endOfWeek = new \DateTime('sunday this week 23:59:59');
+        $today = new \DateTime('today');
         
-        // Get visits for each day of the week
+        // Only show dates up to today, not future dates
+        $endDate = min($today, new \DateTime('sunday this week 23:59:59'));
+        
+        // Get visits for each day of the week up to today
         $weeklyData = [];
         $labels = [];
         $data = [];
         
-        for ($i = 0; $i < 7; $i++) {
-            $currentDate = clone $startOfWeek;
-            $currentDate->add(new \DateInterval("P{$i}D"));
-            
+        $currentDate = clone $startOfWeek;
+        $dayCount = 0;
+        
+        while ($currentDate <= $endDate && $dayCount < 7) {
             $nextDate = clone $currentDate;
             $nextDate->add(new \DateInterval('P1D'));
             
@@ -146,6 +149,9 @@ class PagesController extends AppController
             
             $labels[] = $currentDate->format('D');
             $data[] = $dayVisits;
+            
+            $currentDate->add(new \DateInterval('P1D'));
+            $dayCount++;
         }
         
         return [

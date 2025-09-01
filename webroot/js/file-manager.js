@@ -119,9 +119,31 @@ showNotification(message,type){const $alert=$(`
             </div>
         `);$('body').prepend($alert);setTimeout(()=>{$alert.alert('close')},5000)}
 showModalError(selector,message){$(selector).text(message).show()}
-showPrintModal(){if(!this.selectedItem||this.selectedItem.type!=='file')return;$('#print-form')[0].reset();$('#print-error').hide();$('#user-status').hide();$('#print-roll').val('50221');$('.modal-title').html(`
-            <i class="fas fa-print"></i> Print: ${this.selectedItem.name}
-        `);$('#printModal').modal('show');setTimeout(()=>$('#print-roll').focus(),500);this.hideContextMenu()}
+showPrintModal(){
+    if(!this.selectedItem||this.selectedItem.type!=='file')return;
+    $('#print-form')[0].reset();
+    $('#print-error').hide();
+    $('#user-status').hide();
+    $('#print-roll').val('50221');
+    $('.modal-title').html(`
+        <i class="fas fa-print"></i> Print: ${this.selectedItem.name}
+    `);
+    $('#printModal').modal('show');
+    setTimeout(()=>$('#print-roll').focus(),500);
+    this.hideContextMenu()
+}
+
+showPrintModalFromPreview(filePath, fileName){
+    // Set the selected item for printing
+    this.selectedItem = {
+        path: filePath,
+        name: fileName,
+        type: 'file'
+    };
+    
+    // Show the print modal
+    this.showPrintModal();
+}
 handlePrintSubmit(e){e.preventDefault();const formData=new FormData();formData.append('file',this.selectedItem.path);formData.append('name',$('#print-name').val().trim());formData.append('roll',$('#print-roll').val().trim());formData.append('lab',$('#print-lab').val().trim());const name=$('#print-name').val().trim();const roll=$('#print-roll').val().trim();if(!name||!roll){this.showPrintError('Name and Roll Number are required.');return}
 $('#btn-print-confirm').prop('disabled',!0).html('<i class="fas fa-spinner fa-spin"></i> Processing...');this.showPrintError('');const tryBlobApproach=()=>{$.ajax({url:'/api/print',method:'POST',data:formData,processData:!1,contentType:!1,xhrFields:{responseType:'blob'},success:(data,status,xhr)=>{console.log('Print response received:',{status:status,contentType:xhr.getResponseHeader('Content-Type'),contentLength:xhr.getResponseHeader('Content-Length'),dataSize:data.size,dataType:data.type});if(!data||data.size===0){this.showPrintError('Received empty response from server');return}
 try{const blob=new Blob([data],{type:'application/pdf'});const url=window.URL.createObjectURL(blob);const newWindow=window.open(url,'_blank');if(newWindow){$('#printModal').modal('hide');this.showSuccess('PDF prepared for printing!');setTimeout(()=>{window.URL.revokeObjectURL(url)},5000)}else{this.showPrintError('Popup blocked! Please allow popups for this site and try again.');window.URL.revokeObjectURL(url)}}catch(error){console.error('Error creating blob:',error);this.showPrintError('Failed to create PDF: '+error.message)}},error:(xhr,status,error)=>{console.error('Print error:',{xhr,status,error});console.log('Blob approach failed, trying fallback...');tryFallbackApproach()},complete:()=>{$('#btn-print-confirm').prop('disabled',!1).html('<i class="fas fa-print"></i> Print PDF')}})};const tryFallbackApproach=()=>{console.log('Trying fallback approach...');const tempForm=document.createElement('form');tempForm.method='POST';tempForm.action='/api/print';tempForm.target='_blank';tempForm.style.display='none';const fileInput=document.createElement('input');fileInput.type='hidden';fileInput.name='file';fileInput.value=this.selectedItem.path;tempForm.appendChild(fileInput);const nameInput=document.createElement('input');nameInput.type='hidden';nameInput.name='name';nameInput.value=$('#print-name').val().trim();tempForm.appendChild(nameInput);const rollInput=document.createElement('input');rollInput.type='hidden';rollInput.name='roll';rollInput.value=$('#print-roll').val().trim();tempForm.appendChild(rollInput);const labInput=document.createElement('input');labInput.type='hidden';labInput.name='lab';labInput.value=$('#print-lab').val().trim();tempForm.appendChild(labInput);document.body.appendChild(tempForm);tempForm.submit();document.body.removeChild(tempForm);$('#printModal').modal('hide');this.showSuccess('PDF prepared for printing!')};if(window.Blob&&window.URL&&window.URL.createObjectURL){console.log('Blob support detected, trying blob approach...');tryBlobApproach()}else{console.log('Blob not supported, using fallback approach...');tryFallbackApproach()}}
@@ -145,12 +167,28 @@ showPreviewError(message){this.hidePreviewLoading();$('#preview-body').html(`
                 <p class="text-muted">${message}</p>
             </div>
         `)}
-renderPreview(file){this.currentPreviewFile=file;const icon=this.getFileIcon(file.name,file.mime_type);const previewUrl='/api/preview/'+this.encodePath(file.path);$('.preview-icon').attr('class',icon+' preview-icon');$('.preview-filename').html(`
-            <span class="me-2">${file.name}</span>
-            <button class="btn btn-sm btn-outline-primary" onclick="window.open('${previewUrl}', '_blank')">
-                <i class="fas fa-external-link-alt"></i> Open in new tab
-            </button>
-        `);this.hidePreviewLoading();if(file.is_previewable){this.loadPreviewContent(file)}else{this.showNonPreviewableFile(file)}}
+renderPreview(file){
+    this.currentPreviewFile=file;
+    const icon=this.getFileIcon(file.name,file.mime_type);
+    const previewUrl='/api/preview/'+this.encodePath(file.path);
+    
+    $('.preview-icon').attr('class',icon+' preview-icon');
+    $('.preview-filename').html(`
+        <button class="btn btn-sm btn-outline-primary me-2" onclick="window.open('${previewUrl}', '_blank')">
+            <i class="fas fa-external-link-alt"></i> Open in new tab
+        </button>
+        <button class="btn btn-sm btn-outline-success" onclick="fileManager.showPrintModalFromPreview('${file.path}', '${file.name}')">
+            <i class="fas fa-print"></i> Print
+        </button>
+    `);
+    
+    this.hidePreviewLoading();
+    if(file.is_previewable){
+        this.loadPreviewContent(file)
+    }else{
+        this.showNonPreviewableFile(file)
+    }
+}
 loadPreviewContent(file){const previewUrl='/api/preview/'+this.encodePath(file.path);if(file.mime_type&&file.mime_type.startsWith('image/')){this.showImagePreview(previewUrl,file)}else if(file.mime_type==='application/pdf'){this.showPdfPreview(previewUrl,file)}else if(this.isTextFile(file)){this.showTextPreview(previewUrl,file)}else{this.showNonPreviewableFile(file)}}
 showImagePreview(previewUrl,file){$('#preview-body').html(`
             <div class="image-preview">

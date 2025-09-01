@@ -471,7 +471,20 @@ $this->assign('title', 'About - RBTkaFiles');
 
     <!-- Weekly Visits Chart -->
     <div class="chart-container">
-        <h3 class="chart-heading">Weekly Visits Trend</h3>
+        <h3 class="chart-heading">
+            Weekly Visits Trend 
+            <?php 
+            $weeklyData = $this->getRequest()->getAttribute('weeklyVisitsData') ?? [];
+            if (!empty($weeklyData['labels'])) {
+                $startDate = new \DateTime('monday this week');
+                $today = new \DateTime('today');
+                $endDate = min($today, new \DateTime('sunday this week'));
+                echo '<small class="text-muted d-block mt-2">' . 
+                     $startDate->format('M j') . ' - ' . $endDate->format('M j, Y') . 
+                     '</small>';
+            }
+            ?>
+        </h3>
         <div class="chart-wrapper">
             <canvas id="weeklyVisitsChart" width="400" height="200"></canvas>
         </div>
@@ -547,13 +560,21 @@ document.addEventListener('DOMContentLoaded', function() {
     // Get weekly data from PHP
     const weeklyData = <?= json_encode($this->getRequest()->getAttribute('weeklyVisitsData') ?? []) ?>;
     
+    // Only show data if we have it, don't show fallback data
+    if (!weeklyData.labels || !weeklyData.data || weeklyData.labels.length === 0) {
+        // Hide the chart if no data is available
+        document.getElementById('weeklyVisitsChart').style.display = 'none';
+        document.querySelector('.chart-container').innerHTML = '<p class="text-muted text-center">No visit data available for this week</p>';
+        return;
+    }
+    
     const chart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: weeklyData.labels || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            labels: weeklyData.labels,
             datasets: [{
                 label: 'Visits',
-                data: weeklyData.data || [0, 0, 0, 0, 0, 0, 0],
+                data: weeklyData.data,
                 borderColor: '#28a745',
                 backgroundColor: 'rgba(40, 167, 69, 0.1)',
                 borderWidth: 3,

@@ -909,6 +909,39 @@ body {
     background: #3aa89e;
 }
 
+/* Preview Panel Button Styles */
+.preview-filename .btn {
+    margin: 2px;
+    font-size: 0.8rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.375rem;
+    transition: all 0.2s ease;
+}
+
+.preview-filename .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.preview-filename .btn-outline-primary:hover {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: white;
+}
+
+.preview-filename .btn-outline-success:hover {
+    background-color: #28a745;
+    border-color: #28a745;
+    color: white;
+}
+
+/* Ensure buttons don't wrap awkwardly */
+.preview-filename {
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: center;
+}
+
 /* Responsive text sizing */
 @media (max-width: 768px) {
     .note-content {
