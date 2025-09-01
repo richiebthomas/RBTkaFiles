@@ -330,27 +330,32 @@ isOfficeFile(file){
     console.log('file.name:', file.name);
     console.log('file.extension:', file.extension);
     
-    if(!file.mime_type)return!1;
-    const officeMimeTypes=[
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
-        'application/msword', // .doc
-        'application/vnd.ms-excel', // .xls
-        'application/vnd.ms-powerpoint', // .ppt
-        'application/vnd.oasis.opendocument.text', // .odt
-        'application/vnd.oasis.opendocument.spreadsheet', // .ods
-        'application/vnd.oasis.opendocument.presentation', // .odp
-        'text/csv', // .csv
-        'application/rtf' // .rtf
-    ];
-    
     // Extract extension from filename if not provided
     const extension = file.extension || (file.name ? file.name.toLowerCase().split('.').pop() : '');
     console.log('Extracted extension:', extension);
     
-    const mimeTypeMatch = officeMimeTypes.includes(file.mime_type);
-    const extensionMatch = ['docx','xlsx','pptx','doc','xls','ppt','odt','ods','odp','csv','rtf'].includes(extension);
+    // Check by extension first (this works even without MIME type)
+    const officeExtensions = ['docx','xlsx','pptx','doc','xls','ppt','odt','ods','odp','csv','rtf'];
+    const extensionMatch = officeExtensions.includes(extension);
+    
+    // Check by MIME type if available
+    let mimeTypeMatch = false;
+    if(file.mime_type){
+        const officeMimeTypes=[
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
+            'application/msword', // .doc
+            'application/vnd.ms-excel', // .xls
+            'application/vnd.ms-powerpoint', // .ppt
+            'application/vnd.oasis.opendocument.text', // .odt
+            'application/vnd.oasis.opendocument.spreadsheet', // .ods
+            'application/vnd.oasis.opendocument.presentation', // .odp
+            'text/csv', // .csv
+            'application/rtf' // .rtf
+        ];
+        mimeTypeMatch = officeMimeTypes.includes(file.mime_type);
+    }
     
     console.log('MIME type match:', mimeTypeMatch);
     console.log('Extension match:', extensionMatch);
