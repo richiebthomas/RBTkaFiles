@@ -86,6 +86,9 @@ $appTitle = 'RBTkaFiles';
         <div class="container-fluid">
             <a class="navbar-brand glitch-text" href="<?= $this->Url->build('/') ?>">📁 RBTkaFiles</a>
             <div class="ms-auto">
+                <a href="<?= $this->Url->build('/marks') ?>" class="btn btn-outline-light me-2">
+                    <i class="fas fa-graduation-cap"></i> Marks
+                </a>
                 <a href="<?= $this->Url->build('/pages/about') ?>" class="btn btn-outline-light">
                     <i class="fas fa-info-circle"></i> About
                 </a>
@@ -101,7 +104,7 @@ $appTitle = 'RBTkaFiles';
     <footer class="bg-dark text-light text-center py-3 mt-5">
         <div class="container">
             <small>
-                &copy; RBTkaFiles <?= date('Y') ?>. All Right Reserved. Probably
+                &copy; <?= date('Y') ?> RBTkaFiles. All Right Reserved. Probably
             </small>
         </div>
     </footer>

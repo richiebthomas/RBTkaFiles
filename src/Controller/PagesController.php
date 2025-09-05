@@ -159,6 +159,155 @@ class PagesController extends AppController
     }
 
     /**
+     * Marks page - displays FCRIT student marks
+     */
+    public function marks(): ?Response
+    {
+        // Handle AJAX requests for fetching marks data
+        if ($this->request->is('post')) {
+            $rollnumber = $this->request->getData('rollnumber');
+            $password = $this->request->getData('password');
+            $lazyName = $this->request->getData('lazy_name');
+            
+            if (!$rollnumber) {
+                return $this->response->withType('application/json')
+                    ->withStringBody(json_encode(['success' => false, 'error' => 'Roll number is required']));
+            }
+            
+            try {
+                // Handle lazy name loading
+                if ($lazyName) {
+                    $name = $this->getStudentNameOnly($rollnumber, $password);
+                    return $this->response->withType('application/json')
+                        ->withStringBody(json_encode(['name' => $name]));
+                }
+                
+                // Handle full data loading
+                $studentData = $this->getStudentData($rollnumber, $password);
+                
+                return $this->response->withType('application/json')
+                    ->withStringBody(json_encode([
+                        'success' => true,
+                        'name' => $studentData['name'],
+                        'internal_assessment' => $studentData['internal_assessment'],
+                        'end_semester_marks' => $studentData['end_semester_marks']
+                    ]));
+            } catch (\Exception $e) {
+                return $this->response->withType('application/json')
+                    ->withStringBody(json_encode([
+                        'success' => false, 
+                        'error' => 'Failed to fetch student data: ' . $e->getMessage()
+                    ]));
+            }
+        }
+        
+        // Regular GET request - show the marks page
+        return $this->render('marks');
+    }
+
+    /**
+     * Get student data from FCRIT portal
+     */
+    private function getStudentData($rollnumber, $password): array
+    {
+        $cookieFile = 'cookies.txt';
+        if (file_exists($cookieFile)) unlink($cookieFile);
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, "https://sp.fcrit.ac.in/studentportal/loginauthenticate.php");
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+            'rollnumber' => $rollnumber,
+            'password' => $password ?: $rollnumber,
+        ]));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_COOKIEJAR, $cookieFile);
+        curl_setopt($ch, CURLOPT_COOKIEFILE, $cookieFile);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            "User-Agent: Mozilla/5.0",
+            "Referer: https://sp.fcrit.ac.in/studentportal/profile.php",
+        ]);
+
+        $response = curl_exec($ch);
+
+        if (curl_getinfo($ch, CURLINFO_HTTP_CODE) == 302) {
+            curl_setopt($ch, CURLOPT_URL, "https://sp.fcrit.ac.in/studentportal/firstprofile.php");
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_exec($ch);
+
+            curl_setopt($ch, CURLOPT_URL, "https://sp.fcrit.ac.in/studentportal/internalassessment.php");
+            $internalAssessment = curl_exec($ch);
+
+            curl_setopt($ch, CURLOPT_URL, "https://sp.fcrit.ac.in/studentportal/esemarks.php");
+            $endSemesterMarks = curl_exec($ch);
+        } else {
+            $internalAssessment = "Login failed for IA!";
+            $endSemesterMarks = "Login failed for ESE!";
+        }
+
+        curl_close($ch);
+
+        return [
+            'name' => '', // Lazy loaded later
+            'internal_assessment' => $this->extractTableData($internalAssessment),
+            'end_semester_marks' => $this->extractTableData($endSemesterMarks),
+        ];
+    }
+
+    /**
+     * Get student name only (for lazy loading)
+     */
+    private function getStudentNameOnly($rollnumber, $password): string
+    {
+        $cookieFile = 'cookies.txt';
+        if (file_exists($cookieFile)) unlink($cookieFile);
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, "https://sp.fcrit.ac.in/studentportal/loginauthenticate.php");
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+            'rollnumber' => $rollnumber,
+            'password' => $password ?: $rollnumber,
+        ]));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_COOKIEJAR, $cookieFile);
+        curl_setopt($ch, CURLOPT_COOKIEFILE, $cookieFile);
+        curl_exec($ch);
+
+        curl_setopt($ch, CURLOPT_URL, "https://sp.fcrit.ac.in/studentportal/Course_Exit.php");
+        $html = curl_exec($ch);
+        curl_close($ch);
+
+        return $this->extractStudentName($html);
+    }
+
+    /**
+     * Extract table data from HTML
+     */
+    private function extractTableData($html): string
+    {
+        $doc = new \DOMDocument();
+        @$doc->loadHTML($html);
+        $xpath = new \DOMXPath($doc);
+        $node = $xpath->query("//div[@class='tab-content']")->item(0);
+
+        return $node ? $doc->saveHTML($node) : "No table data found!";
+    }
+
+    /**
+     * Extract student name from HTML
+     */
+    private function extractStudentName($html): string
+    {
+        $doc = new \DOMDocument();
+        @$doc->loadHTML($html);
+        $xpath = new \DOMXPath($doc);
+
+        $nameNode = $xpath->query("//form[@id='form1']//table//tr[1]/td[2]")->item(0);
+        return $nameNode ? trim($nameNode->textContent) : "Name not found";
+    }
+
+    /**
      * Load statistics for the about page
      */
     private function loadAboutPageStats(): void

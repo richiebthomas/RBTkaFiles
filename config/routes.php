@@ -81,6 +81,9 @@ return function (RouteBuilder $routes): void {
          * ...and connect the rest of 'Pages' controller's URLs.
          */
         $builder->connect('/pages/*', 'Pages::display');
+        
+        // Specific route for marks page
+        $builder->connect('/marks', ['controller' => 'Pages', 'action' => 'marks']);
 
         /*
          * Connect catchall routes for all controllers.
