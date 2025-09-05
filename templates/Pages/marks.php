@@ -1,202 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FCRIT Student Marks - RBTkaFiles</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
-
-    .custom-navbar {
-      background: rgba(0, 0, 0, 0.9);
-      padding: 15px 30px;
-      box-shadow: 0 4px 10px rgba(0, 255, 255, 0.2);
-      transition: background 0.3s ease-in-out;
-    }
-    .custom-navbar:hover {
-      background: rgba(0, 0, 0, 1);
-    }
-    .glitch-text {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 24px;
-      font-weight: 700;
-      color: #0ff;
-      position: relative;
-    }
-    @keyframes glitch {
-      0% {
-        text-shadow: -2px -2px 0px rgba(255, 0, 0, 0.8),
-          2px 2px 0px rgba(0, 255, 0, 0.8);
-      }
-      50% {
-        text-shadow: 2px -2px 0px rgba(255, 0, 0, 0.8),
-          -2px 2px 0px rgba(0, 255, 0, 0.8);
-      }
-      100% {
-        text-shadow: -2px 2px 0px rgba(255, 0, 0, 0.8),
-          2px -2px 0px rgba(0, 255, 0, 0.8);
-      }
-    }
-    .glitch-text:hover {
-      color: #ff4b2b;
-      text-shadow: 0 0 12px rgba(255, 75, 75, 0.9);
-      transition: color 0.3s ease-in-out;
-    }
-    body {
-      background: white;
-    }
-    :root {
-      --primary-color: #007bff;
-      --secondary-color: #28a745;
-      --background-color: #f8f9fa;
-      --text-color: #2c3e50;
-    }
-    body {
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      background-color: var(--background-color);
-      color: var(--text-color);
-      min-height: 100vh;
-      padding: 0;
-    }
-    .main-container {
-      max-width: 1000px;
-      margin: 0 auto;
-      opacity: 0;
-      transform: translateY(20px);
-      animation: fadeIn 0.5s ease-out forwards;
-    }
-    @keyframes fadeIn {
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    .title {
-      font-size: 2.5rem;
-      font-weight: 700;
-      color: var(--primary-color);
-      margin-bottom: 2rem;
-      position: relative;
-      padding-bottom: 0.5rem;
-    }
-    .title::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 4rem;
-      height: 3px;
-      background: var(--secondary-color);
-    }
-    .login-form {
-      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-      border-radius: 0.75rem;
-      padding: 2rem;
-      margin: 2rem auto;
-      box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05);
-      max-width: 500px;
-    }
-    .form-control {
-      border: 1px solid #ddd;
-      border-radius: 0.5rem;
-      padding: 0.75rem;
-      margin-bottom: 1rem;
-      transition: all 0.2s ease;
-    }
-    .form-control:focus {
-      border-color: var(--primary-color);
-      box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-    }
-    .btn-primary {
-      background: var(--primary-color);
-      border: none;
-      padding: 0.75rem 2rem;
-      border-radius: 0.5rem;
-      font-weight: 600;
-      transition: all 0.2s ease;
-    }
-    .btn-primary:hover {
-      background: #0056b3;
-      transform: translateY(-2px);
-    }
-    .student-name {
-      font-size: 1.5rem;
-      font-weight: bold;
-      margin: 2rem 0;
-      text-align: center;
-      color: var(--primary-color);
-    }
-    .marks-section {
-      margin: 2rem 0;
-    }
-    .marks-section h3 {
-      color: var(--primary-color);
-      margin-bottom: 1rem;
-      font-weight: 600;
-    }
-    .marks-content {
-      background: white;
-      border-radius: 0.5rem;
-      padding: 1.5rem;
-      box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
-    }
-    .marks-content table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 1rem 0;
-    }
-    .marks-content table, 
-    .marks-content th, 
-    .marks-content td {
-      border: 1px solid #ddd;
-    }
-    .marks-content th, 
-    .marks-content td {
-      padding: 0.75rem;
-      text-align: left;
-    }
-    .marks-content th {
-      background-color: #f8f9fa;
-      font-weight: 600;
-    }
-    .no-data {
-      text-align: center;
-      color: #6c757d;
-      font-style: italic;
-      padding: 2rem;
-    }
-    .loading {
-      text-align: center;
-      color: var(--primary-color);
-      font-style: italic;
-    }
-    .error {
-      color: #dc3545;
-      text-align: center;
-      margin: 1rem 0;
-    }
-    @media (max-width: 768px) {
-      body {
-        padding: 1rem;
-      }
-      .main-container {
-        margin: 0 auto;
-      }
-      .title {
-        font-size: 2rem;
-      }
-      .login-form {
-        padding: 1.5rem;
-        margin: 1rem auto;
-      }
-    }
-  </style>
-</head>
-<body>
- 
 <?php
 /**
  * Marks Page Template
@@ -204,10 +5,342 @@
 $this->assign('title', 'FCRIT Student Marks - RBTkaFiles');
 ?>
 
+<style>
+    :root {
+      --primary-color: #007bff;
+      --secondary-color: #28a745;
+      --background-color: #f8f9fa;
+      --text-color: #2c3e50;
+    }
+    
+    * {
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: white !important;
+      background-color: white !important;
+      color: var(--text-color);
+      min-height: 100vh;
+      padding: 0;
+      margin: 0;
+      font-size: 14px;
+    }
+    
+    .main-container {
+      margin: 0 auto;
+      padding: 1rem;
+      max-width: 1200px;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeIn 0.5s ease-out forwards;
+    }
+    
+    @keyframes fadeIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--primary-color);
+      margin-bottom: 1.5rem;
+      position: relative;
+      padding-bottom: 0.5rem;
+      text-align: center;
+    }
+    
+    .title::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 3rem;
+      height: 3px;
+      background: var(--secondary-color);
+    }
+    
+    .lead {
+      text-align: center;
+      margin-bottom: 2rem;
+      font-size: 0.9rem;
+    }
+    
+    .login-form {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      margin: 1rem auto;
+      box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05);
+      max-width: 400px;
+    }
+    
+    .form-control {
+      border: 1px solid #ddd;
+      border-radius: 0.5rem;
+      padding: 0.75rem;
+      margin-bottom: 1rem;
+      width: 100%;
+      font-size: 16px; /* Prevents zoom on iOS */
+      transition: all 0.2s ease;
+    }
+    
+    .form-control:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+      outline: none;
+    }
+    
+    .btn-primary {
+      background: var(--primary-color);
+      border: none;
+      padding: 0.75rem 2rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      width: 100%;
+      font-size: 16px;
+      transition: all 0.2s ease;
+    }
+    
+    .btn-primary:hover {
+      background: #0056b3;
+      transform: translateY(-2px);
+    }
+    
+    .student-name {
+      font-size: 1.2rem;
+      font-weight: bold;
+      margin: 1.5rem 0;
+      text-align: center;
+      color: var(--primary-color);
+    }
+    
+    .marks-section {
+      margin: 1.5rem 0;
+    }
+    
+    .marks-section h3 {
+      color: var(--primary-color);
+      margin-bottom: 1rem;
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+    
+    .marks-content {
+      background: white;
+      border-radius: 0.5rem;
+      padding: 0.5rem;
+      box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+    
+    /* Desktop table styles */
+    .marks-table-container {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: 0.5rem;
+    }
+    
+    .marks-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0;
+      font-size: 0.85rem;
+    }
+    
+    .marks-table th,
+    .marks-table td {
+      padding: 0.5rem;
+      text-align: left;
+      border: 1px solid #ddd;
+      white-space: nowrap;
+    }
+    
+    .marks-table th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      font-size: 0.8rem;
+    }
+    
+    /* Mobile card layout */
+    .mobile-card-view {
+      display: none;
+    }
+    
+    .mark-card {
+      background: #f8f9fa;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ddd;
+    }
+    
+    .mark-card-header {
+      font-weight: bold;
+      color: var(--primary-color);
+      margin-bottom: 0.5rem;
+      font-size: 1rem;
+    }
+    
+    .mark-card-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.25rem;
+      font-size: 0.9rem;
+    }
+    
+    .mark-card-label {
+      font-weight: 500;
+      color: #555;
+    }
+    
+    .mark-card-value {
+      font-weight: 600;
+    }
+    
+    .no-data {
+      text-align: center;
+      color: #6c757d;
+      font-style: italic;
+      padding: 2rem 1rem;
+    }
+    
+    .loading {
+      text-align: center;
+      color: var(--primary-color);
+      font-style: italic;
+      padding: 1rem;
+    }
+    
+    .error {
+      color: #dc3545;
+      text-align: center;
+      margin: 1rem 0;
+      padding: 1rem;
+    }
+    
+    /* Mobile optimizations */
+    @media (max-width: 768px) {
+      body {
+        font-size: 14px;
+      }
+      
+      .main-container {
+        padding: 0.5rem;
+      }
+      
+      .title {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+      }
+      
+      .lead {
+        font-size: 0.85rem;
+        margin-bottom: 1.5rem;
+      }
+      
+      .login-form {
+        padding: 1rem;
+        margin: 0.5rem auto;
+        max-width: 100%;
+      }
+      
+      .login-form h3 {
+        font-size: 1.1rem;
+      }
+      
+      .student-name {
+        font-size: 1.1rem;
+        margin: 1rem 0;
+      }
+      
+      .marks-section h3 {
+        font-size: 1rem;
+      }
+      
+      .marks-content {
+        padding: 0.25rem;
+      }
+      
+      /* Hide table view on mobile */
+      .desktop-table-view {
+        display: none;
+      }
+      
+      /* Show card view on mobile */
+      .mobile-card-view {
+        display: block;
+      }
+      
+      .mark-card {
+        padding: 0.75rem;
+        margin-bottom: 0.75rem;
+      }
+      
+      .mark-card-header {
+        font-size: 0.95rem;
+      }
+      
+      .mark-card-row {
+        font-size: 0.85rem;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .main-container {
+        padding: 0.25rem;
+      }
+      
+      .title {
+        font-size: 1.3rem;
+      }
+      
+      .login-form {
+        border-radius: 0.5rem;
+      }
+      
+      .mark-card {
+        padding: 0.5rem;
+      }
+      
+      .mark-card-header {
+        font-size: 0.9rem;
+      }
+      
+      .mark-card-row {
+        font-size: 0.8rem;
+      }
+    }
+    
+    /* Utility classes */
+    .text-center { text-align: center; }
+    .mb-3 { margin-bottom: 1rem; }
+    .mb-4 { margin-bottom: 1.5rem; }
+    .mb-5 { margin-bottom: 2rem; }
+    .me-2 { margin-right: 0.5rem; }
+    .d-grid { display: grid; }
+    .form-label { 
+      font-weight: 500; 
+      margin-bottom: 0.5rem; 
+      display: block;
+      font-size: 0.9rem;
+    }
+    .text-muted { color: #6c757d; }
+    .small { font-size: 0.8rem; }
+</style>
+
 <div class="main-container">
-  <h1 class="title text-center">FCRIT Student Marks</h1>
+  <h1 class="title">FCRIT Student Marks</h1>
   
-  <div class="lead text-center mb-5">
+  <div class="lead">
     <p class="mb-4">
       View your internal assessment and end semester marks from the FCRIT student portal.
     </p>
@@ -265,6 +398,58 @@ document.addEventListener('DOMContentLoaded', function() {
     const internalAssessmentDiv = document.getElementById('internal-assessment');
     const endSemesterDiv = document.getElementById('end-semester');
 
+    // Function to convert table to mobile card view
+    function convertTableToCards(tableHtml, containerId) {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = tableHtml;
+        const table = tempDiv.querySelector('table');
+        
+        if (!table) return tableHtml;
+        
+        const headers = Array.from(table.querySelectorAll('th')).map(th => {
+            let headerText = th.textContent.trim();
+            // Convert long form headers to short form
+            headerText = headerText.replace(/Internal Assessment[\s-]*1[\s]*Marks?/gi, 'IA-1');
+            headerText = headerText.replace(/Internal Assessment[\s-]*2[\s]*Marks?/gi, 'IA-2');
+            headerText = headerText.replace(/Internal Assessment[\s-]*Marks?/gi, 'IA Marks');
+            return headerText;
+        });
+        const rows = Array.from(table.querySelectorAll('tbody tr'));
+        
+        let mobileHtml = `<div class="desktop-table-view"><div class="marks-table-container">${tableHtml}</div></div>`;
+        mobileHtml += `<div class="mobile-card-view">`;
+        
+        rows.forEach((row, index) => {
+            const cells = Array.from(row.querySelectorAll('td'));
+            if (cells.length === 0) return;
+            
+            // Find subject name (usually first column)
+            const subjectName = cells[0] ? cells[0].textContent.trim() : `Subject ${index + 1}`;
+            
+            mobileHtml += `<div class="mark-card">`;
+            mobileHtml += `<div class="mark-card-header">${subjectName}</div>`;
+            
+            cells.forEach((cell, cellIndex) => {
+                if (headers[cellIndex] && cell.textContent.trim() && cellIndex > 0) { // Skip first column as it's used as header
+                    mobileHtml += `<div class="mark-card-row">`;
+                    mobileHtml += `<span class="mark-card-label">${headers[cellIndex]}:</span>`;
+                    mobileHtml += `<span class="mark-card-value">${cell.textContent.trim()}</span>`;
+                    mobileHtml += `</div>`;
+                }
+            });
+            
+            mobileHtml += `</div>`;
+        });
+        
+        mobileHtml += `</div>`;
+        return mobileHtml;
+    }
+
+    // Function to add responsive table classes
+    function makeTableResponsive(tableHtml) {
+        return tableHtml.replace(/<table([^>]*)>/gi, '<table$1 class="marks-table">');
+    }
+
     form.addEventListener('submit', function(e) {
         e.preventDefault();
         
@@ -293,14 +478,18 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 // Update internal assessment
                 if (data.internal_assessment) {
-                    internalAssessmentDiv.innerHTML = data.internal_assessment;
+                    const responsiveTable = makeTableResponsive(data.internal_assessment);
+                    const mobileContent = convertTableToCards(responsiveTable, 'internal-assessment');
+                    internalAssessmentDiv.innerHTML = mobileContent;
                 } else {
                     internalAssessmentDiv.innerHTML = '<div class="no-data">No internal assessment data found</div>';
                 }
                 
                 // Update end semester marks
                 if (data.end_semester_marks) {
-                    endSemesterDiv.innerHTML = data.end_semester_marks;
+                    const responsiveTable = makeTableResponsive(data.end_semester_marks);
+                    const mobileContent = convertTableToCards(responsiveTable, 'end-semester');
+                    endSemesterDiv.innerHTML = mobileContent;
                 } else {
                     endSemesterDiv.innerHTML = '<div class="no-data">No end semester marks found</div>';
                 }
@@ -338,6 +527,3 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-
-</body>
-</html>

@@ -1,52 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>About Us - RBTkaFiles</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+<?php
+/**
+ * About Page Template
+ */
+$this->assign('title', 'About - RBTkaFiles');
+?>
 
-    .custom-navbar {
-      background: rgba(0, 0, 0, 0.9);
-      padding: 15px 30px;
-      box-shadow: 0 4px 10px rgba(0, 255, 255, 0.2);
-      transition: background 0.3s ease-in-out;
-    }
-    .custom-navbar:hover {
-      background: rgba(0, 0, 0, 1);
-    }
-    .glitch-text {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 24px;
-      font-weight: 700;
-      color: #0ff;
-      position: relative;
-    }
-    @keyframes glitch {
-      0% {
-        text-shadow: -2px -2px 0px rgba(255, 0, 0, 0.8),
-          2px 2px 0px rgba(0, 255, 0, 0.8);
-      }
-      50% {
-        text-shadow: 2px -2px 0px rgba(255, 0, 0, 0.8),
-          -2px 2px 0px rgba(0, 255, 0, 0.8);
-      }
-      100% {
-        text-shadow: -2px 2px 0px rgba(255, 0, 0, 0.8),
-          2px -2px 0px rgba(0, 255, 0, 0.8);
-      }
-    }
-    .glitch-text:hover {
-      color: #ff4b2b;
-      text-shadow: 0 0 12px rgba(255, 75, 75, 0.9);
-      transition: color 0.3s ease-in-out;
-    }
-    body {
-      background: white;
-    }
+<style>
     :root {
       --primary-color: #007bff;
       --secondary-color: #28a745;
@@ -55,7 +14,8 @@
     }
     body {
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      background-color: var(--background-color);
+      background: white !important;
+      background-color: white !important;
       color: var(--text-color);
       min-height: 100vh;
       padding: 0;
@@ -392,15 +352,6 @@
       }
     }
   </style>
-</head>
-<body>
- 
-<?php
-/**
- * About Page Template
- */
-$this->assign('title', 'About - RBTkaFiles');
-?>
 
 <h1 class="title text-center">Why RBTkaFiles?</h1>
 
@@ -639,5 +590,3 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-</body>
-</html>
