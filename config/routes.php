@@ -75,6 +75,8 @@ return function (RouteBuilder $routes): void {
             $routes->get('/debug-files', ['controller' => 'Files', 'action' => 'debugFiles']);
             $routes->post('/test', ['controller' => 'Files', 'action' => 'apiTest']);
             $routes->post('/save-notes', ['controller' => 'Files', 'action' => 'saveNotes']);
+            $routes->get('/search/suggestions', ['controller' => 'Search', 'action' => 'suggestions']);
+            $routes->post('/search/suggestions', ['controller' => 'Search', 'action' => 'suggestions']);
         });
 
         /*

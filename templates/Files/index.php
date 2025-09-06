@@ -10,6 +10,20 @@ $this->assign('title', 'RBTkaFiles');
         <div class="col-md-12" id="main-panel">
             <!-- Toolbar -->
             <div class="actions-toolbar">
+                <!-- Search Box -->
+                <div class="search-container">
+                    <div class="search-input-wrapper">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="search-input" class="search-input" placeholder="Search files and folders...">
+                        <button type="button" id="search-clear" class="search-clear" style="display: none;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div id="search-suggestions" class="search-suggestions" style="display: none;">
+                        <!-- Search suggestions will be populated by JavaScript -->
+                    </div>
+                </div>
+                
                 <button class="action-button" id="btn-create-folder">
                     <i class="fas fa-folder-plus"></i>
                     Create Folder
@@ -335,6 +349,144 @@ body {
     display: flex;
     gap: 1rem;
     margin-bottom: 2rem;
+    align-items: flex-start;
+}
+
+/* Search Container */
+.search-container {
+    position: relative;
+    flex: 1;
+    max-width: 400px;
+}
+
+.search-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-icon {
+    position: absolute;
+    left: 12px;
+    color: #6c757d;
+    z-index: 2;
+}
+
+.search-input {
+    width: 100%;
+    padding: 10px 40px 10px 40px;
+    border: 1px solid #e5e7eb;
+    border-radius: 25px;
+    font-size: 14px;
+    background: white;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,.05);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #4ecdc4;
+    box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.1);
+}
+
+.search-clear {
+    position: absolute;
+    right: 8px;
+    background: none;
+    border: none;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+
+.search-clear:hover {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+/* Search Suggestions */
+.search-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+.search-suggestion {
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid #f3f4f6;
+    transition: background-color 0.2s ease;
+}
+
+.search-suggestion:last-child {
+    border-bottom: none;
+}
+
+.search-suggestion:hover,
+.search-suggestion.active {
+    background-color: #f8f9fa;
+}
+
+.search-suggestion.no-results {
+    color: #6c757d;
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+}
+
+.suggestion-name {
+    font-weight: 500;
+    color: #1f2937;
+    margin-bottom: 4px;
+}
+
+.suggestion-name mark {
+    background-color: #fef3c7;
+    padding: 0;
+    border-radius: 2px;
+}
+
+.suggestion-path {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.suggestion-type .badge {
+    font-size: 10px;
+    padding: 2px 6px;
+}
+
+/* Responsive search */
+@media (max-width: 768px) {
+    .actions-toolbar {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .search-container {
+        max-width: 100%;
+        order: -1;
+    }
+    
+    .action-button {
+        width: 100%;
+    }
 }
 
 .action-button {
