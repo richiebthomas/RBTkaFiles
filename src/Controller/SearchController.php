@@ -323,9 +323,18 @@ class SearchController extends AppController
         $name = strtolower($item->name);
         $path = strtolower($item->path);
         
+        // Get full path context for better matching
+        $pathParts = $this->getPathParts($item->path);
+        $fullPath = strtolower(implode(' ', $pathParts));
+        
         // Exact name match (highest priority)
         if ($name === strtolower($originalQuery)) {
             $score += 100;
+        }
+        
+        // Full path context matching (very important for user intent)
+        if (strpos($fullPath, strtolower($originalQuery)) !== false) {
+            $score += 90;
         }
         
         // Starts with query
@@ -338,25 +347,33 @@ class SearchController extends AppController
             $score += 60;
         }
         
-        // Fuzzy matching for each word
+        // Enhanced fuzzy matching with context awareness
         foreach ($queryWords as $word) {
             $word = strtolower($word);
             
-            // Exact word match in name
+            // Exact word match in name (highest priority for name)
             if (strpos($name, $word) !== false) {
-                $score += 40;
+                $score += 40; // Reduced from 50 to give more weight to context
             }
             
-            // Fuzzy word match (allows for typos and variations)
-            if ($this->fuzzyMatch($name, $word)) {
-                $score += 25;
-            }
-            
-            // Word appears in path
+            // Exact word match in path
             if (strpos($path, $word) !== false) {
-                $score += 15;
+                $score += 30;
+            }
+            
+            // Fuzzy word match in name
+            if ($this->fuzzyMatch($name, $word)) {
+                $score += 35;
+            }
+            
+            // Fuzzy word match in path
+            if ($this->fuzzyMatch($path, $word)) {
+                $score += 20;
             }
         }
+        
+        // Context-specific bonuses based on user intent
+        $this->applyContextBonuses($item, $queryWords, $pathParts, $score);
         
         // Bonus for folders (they contain other items)
         if ($item->isFolder()) {
@@ -368,6 +385,66 @@ class SearchController extends AppController
         $score += max(0, 10 - $pathDepth);
         
         return $score;
+    }
+    
+    /**
+     * Apply context-specific bonuses based on user intent
+     */
+    private function applyContextBonuses($item, array $queryWords, array $pathParts, float &$score): void
+    {
+        $queryText = strtolower(implode(' ', $queryWords));
+        $pathText = strtolower(implode(' ', $pathParts));
+        $name = strtolower($item->name);
+        
+        // Manual folder bonus - if "manual" is in query and item is in Manual folder
+        if (strpos($queryText, 'manual') !== false && 
+            (strpos($pathText, 'manual') !== false || strpos($name, 'manual') !== false)) {
+            $score += 150; // Even higher bonus for being in Manual folder
+        }
+        
+        // Lab folder bonus - if "lab" is in query and item is in Lab folder
+        if (strpos($queryText, 'lab') !== false && 
+            (strpos($pathText, 'lab') !== false || strpos($name, 'lab') !== false)) {
+            $score += 40;
+        }
+        
+        // Experiment/EXP bonus - if "exp" is in query and item contains experiment
+        if (strpos($queryText, 'exp') !== false && 
+            (strpos($name, 'experiment') !== false || strpos($name, 'exp') !== false)) {
+            $score += 35;
+        }
+        
+        // Number matching bonus - if query contains numbers and item contains same numbers
+        preg_match_all('/\d+/', $queryText, $queryNumbers);
+        preg_match_all('/\d+/', $name, $itemNumbers);
+        
+        if (!empty($queryNumbers[0]) && !empty($itemNumbers[0])) {
+            foreach ($queryNumbers[0] as $queryNum) {
+                foreach ($itemNumbers[0] as $itemNum) {
+                    if ($queryNum === $itemNum) {
+                        $score += 25;
+                    }
+                }
+            }
+        }
+        
+        // Folder structure relevance - prioritize items that match expected structure
+        if (strpos($queryText, 'sad') !== false && strpos($pathText, 'sad') !== false) {
+            $score += 20;
+        }
+        
+        if (strpos($queryText, 'dsl') !== false && strpos($pathText, 'dsl') !== false) {
+            $score += 20;
+        }
+        
+        if (strpos($queryText, 'ioe') !== false && strpos($pathText, 'ioe') !== false) {
+            $score += 20;
+        }
+        
+        // PDF bonus for lab materials
+        if (strpos($queryText, 'lab') !== false && strpos($name, '.pdf') !== false) {
+            $score += 15;
+        }
     }
 
     /**
