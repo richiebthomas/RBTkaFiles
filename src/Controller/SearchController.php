@@ -10,6 +10,7 @@ use Cake\Http\Response;
  * Search Controller
  *
  * @property \App\Model\Table\FileItemsTable $FileItems
+ * @property \App\Model\Table\DirectoryNotesTable $DirectoryNotes
  */
 class SearchController extends AppController
 {
@@ -19,6 +20,9 @@ class SearchController extends AppController
         
         // Load the FileItems table
         $this->FileItems = $this->fetchTable('FileItems');
+        
+        // Load the DirectoryNotes table
+        $this->DirectoryNotes = $this->fetchTable('DirectoryNotes');
         
         // Set response headers for AJAX requests
         if ($this->request->is(['ajax', 'json'])) {
@@ -81,9 +85,14 @@ class SearchController extends AppController
             ->orderAsc('name')
             ->toArray();
 
+        // Get all directory notes from database
+        $allNotes = $this->DirectoryNotes->find()
+            ->toArray();
+
         $suggestions = [];
-        $maxSuggestions = 10;
+        $maxSuggestions = 15; // Increased to accommodate notes
         
+        // Search through files and folders
         foreach ($allItems as $item) {
             // Validate that all ancestors exist in database
             if (!$this->validateAncestorPath($item->path)) {
@@ -98,9 +107,21 @@ class SearchController extends AppController
                     'score' => $score,
                     'match_type' => $this->getMatchType($item, $query, $normalizedQuery),
                     'highlighted_name' => $this->highlightMatches($item->name, $queryWords),
-                    'path_parts' => $this->getPathParts($item->path)
+                    'path_parts' => $this->getPathParts($item->path),
+                    'type' => 'file_or_folder'
                 ];
             }
+        }
+        
+        // Search through directory notes
+        foreach ($allNotes as $note) {
+            // Validate that the directory containing the notes exists as a folder in FileItems
+            if (!$this->validateNotesDirectoryExists($note->path)) {
+                continue;
+            }
+            
+            $noteResults = $this->searchInNotes($note, $query, $normalizedQuery, $queryWords);
+            $suggestions = array_merge($suggestions, $noteResults);
         }
         
         // Sort by relevance score (highest first)
@@ -134,6 +155,163 @@ class SearchController extends AppController
         }
         
         return true;
+    }
+
+    /**
+     * Validate that the directory containing notes exists as a folder in FileItems
+     */
+    private function validateNotesDirectoryExists(string $notesPath): bool
+    {
+        if (empty($notesPath)) {
+            // Root path - check if there's a folder at root level
+            return $this->FileItems->exists(['type' => 'folder', 'parent_path' => '']);
+        }
+        
+        // Check if the directory path exists as a folder in FileItems
+        $directoryItem = $this->FileItems->getByPath($notesPath);
+        
+        if (!$directoryItem || !$directoryItem->isFolder()) {
+            return false;
+        }
+        
+        // Also validate all ancestor paths exist
+        return $this->validateAncestorPath($notesPath);
+    }
+
+    /**
+     * Search through directory notes
+     */
+    private function searchInNotes($note, string $originalQuery, string $normalizedQuery, array $queryWords): array
+    {
+        $results = [];
+        
+        // Handle both array and JSON string formats
+        $notesData = $note->notes_data;
+        if (is_string($notesData)) {
+            $notesData = json_decode($notesData, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return $results;
+            }
+        }
+        
+        if (!$notesData || !is_array($notesData)) {
+            return $results;
+        }
+        
+        foreach ($notesData as $noteItem) {
+            if (!isset($noteItem['content']) || empty($noteItem['content'])) {
+                continue;
+            }
+            
+            $content = $noteItem['content'];
+            $score = $this->calculateNoteRelevanceScore($content, $originalQuery, $normalizedQuery, $queryWords);
+            
+            if ($score > 0) {
+                $results[] = [
+                    'item' => [
+                        'id' => $noteItem['id'] ?? uniqid(),
+                        'name' => 'Note: ' . $this->truncateText($content, 50),
+                        'type' => 'note',
+                        'path' => $note->path,
+                        'content' => $content,
+                        'created' => $noteItem['created'] ?? null,
+                        'modified' => $noteItem['modified'] ?? null
+                    ],
+                    'score' => $score,
+                    'match_type' => $this->getNoteMatchType($content, $originalQuery, $normalizedQuery),
+                    'highlighted_name' => $this->highlightMatches($this->truncateText($content, 50), $queryWords),
+                    'highlighted_content' => $this->highlightMatches($content, $queryWords),
+                    'path_parts' => $this->getPathParts($note->path),
+                    'type' => 'note'
+                ];
+            }
+        }
+        return $results;
+    }
+
+    /**
+     * Calculate relevance score for a note
+     */
+    private function calculateNoteRelevanceScore(string $content, string $originalQuery, string $normalizedQuery, array $queryWords): float
+    {
+        $score = 0;
+        $contentLower = strtolower($content);
+        $queryLower = strtolower($originalQuery);
+        
+        // Exact content match (highest priority)
+        if ($contentLower === $queryLower) {
+            $score += 90;
+        }
+        
+        // Content starts with query
+        if (strpos($contentLower, $queryLower) === 0) {
+            $score += 70;
+        }
+        
+        // Content contains query
+        if (strpos($contentLower, $queryLower) !== false) {
+            $score += 50;
+        }
+        
+        // Fuzzy matching for each word
+        foreach ($queryWords as $word) {
+            $word = strtolower($word);
+            
+            // Exact word match in content
+            if (strpos($contentLower, $word) !== false) {
+                $score += 30;
+            }
+            
+            // Fuzzy word match (allows for typos and variations)
+            if ($this->fuzzyMatch($contentLower, $word)) {
+                $score += 20;
+            }
+        }
+        
+        // Bonus for shorter content (more specific)
+        $contentLength = strlen($content);
+        if ($contentLength < 100) {
+            $score += 10;
+        } elseif ($contentLength < 500) {
+            $score += 5;
+        }
+        
+        return $score;
+    }
+
+    /**
+     * Get match type for notes
+     */
+    private function getNoteMatchType(string $content, string $originalQuery, string $normalizedQuery): string
+    {
+        $contentLower = strtolower($content);
+        $queryLower = strtolower($originalQuery);
+        
+        if ($contentLower === $queryLower) {
+            return 'exact';
+        }
+        
+        if (strpos($contentLower, $queryLower) === 0) {
+            return 'starts_with';
+        }
+        
+        if (strpos($contentLower, $queryLower) !== false) {
+            return 'contains';
+        }
+        
+        return 'fuzzy';
+    }
+
+    /**
+     * Truncate text for display
+     */
+    private function truncateText(string $text, int $length): string
+    {
+        if (strlen($text) <= $length) {
+            return $text;
+        }
+        
+        return substr($text, 0, $length) . '...';
     }
 
     /**
@@ -291,6 +469,18 @@ class SearchController extends AppController
         $query = trim($query);
         
         return $query;
+    }
+
+    /**
+     * Test endpoint to verify search controller is working
+     */
+    public function test(): Response
+    {
+        return $this->jsonResponse([
+            'success' => true,
+            'message' => 'SearchController is working',
+            'timestamp' => date('Y-m-d H:i:s')
+        ]);
     }
 
     /**

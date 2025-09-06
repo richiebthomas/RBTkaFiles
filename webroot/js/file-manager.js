@@ -401,23 +401,25 @@ toggleReadMore(event){const button=$(event.currentTarget);const noteContent=butt
 handleSearchInput(e){const query=$(e.target).val().trim();if(this.searchTimeout){clearTimeout(this.searchTimeout)}if(query.length<2){this.hideSearchSuggestions();$('#search-clear').hide();return}$('#search-clear').show();this.searchTimeout=setTimeout(()=>{this.performSearch(query)},300)}
 handleSearchBlur(e){const $target=$(e.target);const $suggestions=$('#search-suggestions');if(!$suggestions.is(e.relatedTarget)&&!$suggestions.has(e.relatedTarget).length){setTimeout(()=>{this.hideSearchSuggestions()},200)}}
 handleSearchKeydown(e){const $suggestions=$('#search-suggestions');const $active=$suggestions.find('.search-suggestion.active');if(e.key==='ArrowDown'){e.preventDefault();if($active.length){$active.removeClass('active').next().addClass('active')}else{$suggestions.find('.search-suggestion:first').addClass('active')}}else if(e.key==='ArrowUp'){e.preventDefault();if($active.length){$active.removeClass('active').prev().addClass('active')}else{$suggestions.find('.search-suggestion:last').addClass('active')}}else if(e.key==='Enter'){e.preventDefault();if($active.length){$active.click()}}else if(e.key==='Escape'){this.hideSearchSuggestions();$('#search-input').blur()}}
-handleSuggestionClick(e){e.preventDefault();const $suggestion=$(e.currentTarget);const item=$suggestion.data('item');if(item.type==='folder'){this.loadDirectory(item.path);this.hideSearchSuggestions();$('#search-input').val('')}else{this.loadDirectory(this.dirname(item.path));this.hideSearchSuggestions();$('#search-input').val('');setTimeout(()=>{$(`.file-item[data-path="${item.path}"]`).click()},100)}}
+handleSuggestionClick(e){e.preventDefault();const $suggestion=$(e.currentTarget);const item=$suggestion.data('item');if(item.type==='folder'){this.loadDirectory(item.path);this.hideSearchSuggestions();$('#search-input').val('')}else if(item.type==='note'){const notePath=item.path||'';this.loadDirectory(notePath);this.hideSearchSuggestions();$('#search-input').val('');setTimeout(()=>{this.scrollToNotesSection()},500)}else{const parentPath=this.dirname(item.path);this.loadDirectory(parentPath);this.hideSearchSuggestions();$('#search-input').val('');setTimeout(()=>{$(`.file-item[data-path="${item.path}"]`).click()},100)}}
 clearSearch(){$('#search-input').val('');this.hideSearchSuggestions();$('#search-clear').hide()}
 showSearchSuggestions(){$('#search-suggestions').show();this.searchVisible=!0}
 hideSearchSuggestions(){$('#search-suggestions').hide();this.searchVisible=!1}
 performSearch(query){$.ajax({url:'/api/search/suggestions',method:'GET',data:{q:query},dataType:'json',success:(response)=>{if(response.success){this.renderSearchSuggestions(response.suggestions)}else{this.showError('Search error: '+(response.message||'Unknown error'))}},error:(xhr)=>{this.showError('Search failed: '+xhr.statusText)}})}
-renderSearchSuggestions(suggestions){const $container=$('#search-suggestions');$container.empty();if(suggestions.length===0){$container.html('<div class="search-suggestion no-results"><i class="fas fa-search"></i> No results found</div>');return}suggestions.forEach(suggestion=>{const item=suggestion.item;const icon=item.type==='folder'?'fas fa-folder':'fas fa-file';const $suggestion=$(`
-            <div class="search-suggestion" data-item='${JSON.stringify(item)}'>
-                <div class="d-flex align-items-center">
-                    <i class="${icon} me-2"></i>
-                    <div class="flex-grow-1">
-                        <div class="suggestion-name">${suggestion.highlighted_name}</div>
-                        <div class="suggestion-path text-muted small">${suggestion.path_parts.join(' / ')}</div>
-                    </div>
-                    <div class="suggestion-type">
-                        <span class="badge badge-${item.type==='folder'?'primary':'secondary'}">${item.type}</span>
-                    </div>
+renderSearchSuggestions(suggestions){const $container=$('#search-suggestions');$container.empty();if(suggestions.length===0){$container.html('<div class="search-suggestion no-results"><i class="fas fa-search"></i> No results found</div>');return}suggestions.forEach(suggestion=>{const item=suggestion.item;const iconClass=this.getFileIconClass(item);const typeClass=this.getTypeClass(item.type);const typeText=this.getTypeText(item.type);const $suggestion=$(`
+            <div class="search-suggestion" data-item="${JSON.stringify(item).replace(/"/g,'&quot;')}">
+                <div class="search-suggestion-icon ${item.type}">
+                    <i class="${iconClass}"></i>
+                </div>
+                <div class="search-suggestion-content">
+                    <div class="suggestion-name">${suggestion.highlighted_name}</div>
+                    ${item.type==='note'?`<div class="suggestion-content">${suggestion.highlighted_content||suggestion.highlighted_name}</div>`:''}
+                    <div class="suggestion-path">${suggestion.path_parts.join(' / ')}</div>
+                </div>
+                <div class="suggestion-type">
+                    <span class="badge badge-${typeClass}">${typeText}</span>
                 </div>
             </div>
-        `);$container.append($suggestion)});this.showSearchSuggestions()}}
+        `);$container.append($suggestion)});this.showSearchSuggestions()}
+getFileIconClass(item){if(item.type==='note'){return 'fas fa-sticky-note'}else if(item.type==='folder'){return 'fas fa-folder'}else{const extension=this.getFileExtension(item.name).toLowerCase();const iconMap={'pdf':'fas fa-file-pdf file-icon-pdf','doc':'fas fa-file-word file-icon-doc','docx':'fas fa-file-word file-icon-doc','xls':'fas fa-file-excel file-icon-xls','xlsx':'fas fa-file-excel file-icon-xls','ppt':'fas fa-file-powerpoint file-icon-ppt','pptx':'fas fa-file-powerpoint file-icon-ppt','jpg':'fas fa-file-image file-icon-image','jpeg':'fas fa-file-image file-icon-image','png':'fas fa-file-image file-icon-image','gif':'fas fa-file-image file-icon-image','svg':'fas fa-file-image file-icon-image','mp4':'fas fa-file-video file-icon-video','avi':'fas fa-file-video file-icon-video','mov':'fas fa-file-video file-icon-video','mp3':'fas fa-file-audio file-icon-audio','wav':'fas fa-file-audio file-icon-audio','zip':'fas fa-file-archive file-icon-archive','rar':'fas fa-file-archive file-icon-archive','7z':'fas fa-file-archive file-icon-archive','js':'fas fa-file-code file-icon-code','html':'fas fa-file-code file-icon-code','css':'fas fa-file-code file-icon-code','php':'fas fa-file-code file-icon-code','py':'fas fa-file-code file-icon-code','java':'fas fa-file-code file-icon-code','txt':'fas fa-file-alt file-icon-text','md':'fas fa-file-alt file-icon-text'};return iconMap[extension]||'fas fa-file file-icon-text'}}getTypeClass(type){const typeMap={'note':'info','folder':'primary','file':'secondary'};return typeMap[type]||'secondary'}getTypeText(type){const typeMap={'note':'Note','folder':'Folder','file':'File'};return typeMap[type]||'File'}getFileExtension(filename){return filename.split('.').pop()||''}scrollToNotesSection(){$('#notes-section').show();$('html, body').animate({scrollTop:$('#notes-section').offset().top-100},500)}}
 $(document).ready(function(){try{window.fileManager=new FileManager();window.addEventListener('popstate',function(e){const path=e.state?.path||'';window.fileManager.currentPath=path;window.fileManager.loadDirectory(path)})}catch(error){}})

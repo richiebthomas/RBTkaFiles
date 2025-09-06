@@ -77,6 +77,7 @@ return function (RouteBuilder $routes): void {
             $routes->post('/save-notes', ['controller' => 'Files', 'action' => 'saveNotes']);
             $routes->get('/search/suggestions', ['controller' => 'Search', 'action' => 'suggestions']);
             $routes->post('/search/suggestions', ['controller' => 'Search', 'action' => 'suggestions']);
+            $routes->get('/search/test', ['controller' => 'Search', 'action' => 'test']);
         });
 
         /*
