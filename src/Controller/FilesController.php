@@ -79,12 +79,6 @@ class FilesController extends AppController
         $path = $path ? urldecode($path) : '';
         $path = $this->sanitizePath($path);
 
-        $this->log('=== BROWSE DEBUG ===', 'debug');
-        $this->log('Path segments: ' . json_encode($pathSegments), 'debug');
-        $this->log('Joined path: ' . $originalPath, 'debug');
-        $this->log('Original path: ' . ($originalPath ?? 'null'), 'debug');
-        $this->log('Decoded path: ' . $path, 'debug');
-        $this->log('Sanitized path: ' . $path, 'debug');
 
         try {
             $items = $this->FileItems->findByPath($path)->toArray();
@@ -99,11 +93,17 @@ class FilesController extends AppController
                     $directoryNote->notes_data;
             }
 
-            $this->log('Query: findByPath(' . $path . ')', 'debug');
-            $this->log('Items found: ' . count($items), 'debug');
+
+            // Generate ETag based on directory content
+            $etag = $this->generateDirectoryETag($path, $items, $notes);
             
-            foreach ($items as $item) {
-                $this->log('Item: ' . $item->name . ' (path: ' . $item->path . ', parent: ' . $item->parent_path . ')', 'debug');
+            // Check if client has cached version
+            $clientETag = $request->getHeaderLine('If-None-Match');
+            
+            if ($clientETag && $clientETag === $etag) {
+                return $this->response->withStatus(304)
+                                     ->withHeader('ETag', $etag)
+                                     ->withHeader('Cache-Control', 'private, max-age=300');
             }
 
             $response = [
@@ -120,6 +120,13 @@ class FilesController extends AppController
                     'query' => 'parent_path = "' . $path . '"'
                 ]
             ];
+
+            // Return response with caching headers
+            return $this->response->withType('application/json')
+                                 ->withStringBody(json_encode($response))
+                                 ->withHeader('ETag', $etag)
+                                 ->withHeader('Cache-Control', 'private, max-age=300')
+                                 ->withHeader('Last-Modified', gmdate('D, d M Y H:i:s') . ' GMT');
         } catch (\Exception $e) {
             $this->log('Error in browse: ' . $e->getMessage(), 'error');
             $response = [
@@ -130,9 +137,9 @@ class FilesController extends AppController
                     'error' => $e->getMessage()
                 ]
             ];
+            
+            return $this->jsonResponse($response);
         }
-
-        return $this->jsonResponse($response);
     }
 
     /**
@@ -220,6 +227,9 @@ class FilesController extends AppController
             // Create physical directory
             $this->ensurePhysicalDirectory($folderPath);
             
+            // Invalidate cache for parent directory
+            $this->invalidateDirectoryCache($parentPath);
+            
             return $this->jsonResponse(['success' => true, 'message' => 'Folder created successfully', 'item' => $folder]);
         }
 
@@ -298,6 +308,8 @@ class FilesController extends AppController
                 ]);
 
                 if ($this->FileItems->save($fileItem)) {
+                    // Invalidate cache for parent directory
+                    $this->invalidateDirectoryCache($parentPath);
                     $results[] = ['success' => true, 'name' => $originalName, 'item' => $fileItem];
                 } else {
                     unlink($fullDiskPath); // Clean up file
@@ -348,6 +360,10 @@ class FilesController extends AppController
                 // Update directory notes path
                 $this->updateDirectoryNotesPath($oldPath, $newPath);
             }
+            
+            // Invalidate cache for both old and new parent directories
+            $this->invalidateDirectoryCache(dirname($oldPath));
+            $this->invalidateDirectoryCache(dirname($newPath));
             
             return $this->jsonResponse(['success' => true, 'message' => 'Item renamed successfully', 'item' => $item]);
         }
@@ -429,6 +445,10 @@ class FilesController extends AppController
                 $this->updateDirectoryNotesPath($sourcePath, $newPath);
             }
             
+            // Invalidate cache for both source and target directories
+            $this->invalidateDirectoryCache(dirname($sourcePath));
+            $this->invalidateDirectoryCache($targetPath);
+            
             return $this->jsonResponse([
                 'success' => true, 
                 'message' => 'Item moved successfully',
@@ -494,6 +514,9 @@ class FilesController extends AppController
         }
 
         if ($this->FileItems->delete($item)) {
+            // Invalidate cache for parent directory
+            $this->invalidateDirectoryCache(dirname($path));
+            
             return $this->jsonResponse(['success' => true, 'message' => 'Item deleted successfully']);
         }
 
@@ -1011,6 +1034,39 @@ class FilesController extends AppController
                 'message' => $e->getMessage()
             ]);
         }
+    }
+
+    /**
+     * Generate ETag for directory content
+     */
+    private function generateDirectoryETag(string $path, array $items, array $notes): string
+    {
+        // Create a hash based on directory content (without timestamp for consistent ETags)
+        $contentData = [
+            'path' => $path,
+            'items' => array_map(function($item) {
+                return [
+                    'name' => $item->name,
+                    'type' => $item->type,
+                    'size' => $item->size,
+                    'modified' => $item->modified ? $item->modified->format('Y-m-d H:i:s') : null,
+                    'mime_type' => $item->mime_type
+                ];
+            }, $items),
+            'notes' => $notes
+        ];
+        
+        $contentHash = md5(json_encode($contentData));
+        return '"' . $contentHash . '"';
+    }
+
+    /**
+     * Invalidate cache for a specific path and all parent paths
+     */
+    private function invalidateDirectoryCache(string $path): void
+    {
+        // This method will be used to invalidate cache when files are modified
+        // For now, we rely on the ETag generation for invalidation
     }
 
     /**
