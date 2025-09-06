@@ -1276,5 +1276,5 @@ $this->Html->scriptEnd();
 // Add the notes CSS inline to avoid loading issues
 
 // Add the file manager script
-$this->Html->script('file-manager', ['block' => true]);
+$this->Html->script('file-manager.min', ['block' => true]);
 ?>

@@ -412,8 +412,8 @@ renderSearchSuggestions(suggestions){const $container=$('#search-suggestions');$
                     <i class="${iconClass}"></i>
                 </div>
                 <div class="search-suggestion-content">
-                    <div class="suggestion-name">${suggestion.highlighted_name}</div>
-                    ${item.type==='note'?`<div class="suggestion-content">${suggestion.highlighted_content||suggestion.highlighted_name}</div>`:''}
+                    <div class="suggestion-name">${item.name}</div>
+                    ${item.type==='note'?`<div class="suggestion-content">${item.content||item.name}</div>`:''}
                     <div class="suggestion-path">${suggestion.path_parts.join(' / ')}</div>
                 </div>
                 <div class="suggestion-type">

@@ -106,7 +106,6 @@ class SearchController extends AppController
                     'item' => $item,
                     'score' => $score,
                     'match_type' => $this->getMatchType($item, $query, $normalizedQuery),
-                    'highlighted_name' => $this->highlightMatches($item->name, $queryWords),
                     'path_parts' => $this->getPathParts($item->path),
                     'type' => 'file_or_folder'
                 ];
@@ -219,8 +218,6 @@ class SearchController extends AppController
                     ],
                     'score' => $score,
                     'match_type' => $this->getNoteMatchType($content, $originalQuery, $normalizedQuery),
-                    'highlighted_name' => $this->highlightMatches($this->truncateText($content, 50), $queryWords),
-                    'highlighted_content' => $this->highlightMatches($content, $queryWords),
                     'path_parts' => $this->getPathParts($note->path),
                     'type' => 'note'
                 ];
@@ -497,24 +494,6 @@ class SearchController extends AppController
         return 'fuzzy';
     }
 
-    /**
-     * Highlight matching parts of the name
-     */
-    private function highlightMatches(string $name, array $queryWords): string
-    {
-        $highlighted = $name;
-        
-        foreach ($queryWords as $word) {
-            $word = preg_quote($word, '/');
-            $highlighted = preg_replace(
-                "/($word)/i",
-                '<mark>$1</mark>',
-                $highlighted
-            );
-        }
-        
-        return $highlighted;
-    }
 
     /**
      * Get path parts for display

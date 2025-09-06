@@ -25,7 +25,7 @@ $appTitle = 'RBTkaFiles';
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
 
     <!-- Custom CSS -->
-    <?= $this->Html->css(['file-manager']) ?>
+    <?= $this->Html->css(['file-manager.min']) ?>
 
     <style>
     /* Navigation Bar Styles */
