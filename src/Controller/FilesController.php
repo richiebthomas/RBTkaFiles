@@ -612,7 +612,7 @@ class FilesController extends AppController
             // Configuration files  
             'htaccess', 'htpasswd', 'ini', 'cfg', 'conf',
             // Archive files that could contain dangerous content
-            'zip', 'rar', '7z', 'tar', 'gz', 'bz2', 'xz',
+            'rar', '7z', 'tar', 'gz', 'bz2', 'xz',
             // Other potentially dangerous
             'sql', 'db', 'sqlite', 'mdb'
         ];
