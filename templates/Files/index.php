@@ -37,7 +37,7 @@ $this->assign('title', 'RBTkaFiles');
                 
                 <button class="action-button" id="btn-open-pad">
                     <i class="fas fa-edit"></i>
-                    Open Pad
+                    Open WordPad
                 </button>
             </div>
 

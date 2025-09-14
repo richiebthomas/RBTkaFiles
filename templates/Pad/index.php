@@ -2,13 +2,13 @@
 /**
  * Pad Index Template - Simple Firepad Editor
  */
-$this->assign('title', 'RBTkaPad - Collaborative Editor');
+$this->assign('title', 'RBTkaWordPad - Collaborative Editor');
 ?>
 
 <div class="pad-header">
     <div class="d-flex justify-content-between align-items-center">
         <h4 class="mb-0">
-            <i class="fas fa-edit text-primary"></i> RBTkaPad
+            <i class="fas fa-edit text-primary"></i> RBTkaWordPad
         </h4>
         <div>
             <span id="firepad-status" class="badge badge-info">Connecting...</span>
@@ -66,7 +66,7 @@ $this->assign('title', 'RBTkaPad - Collaborative Editor');
         firepad = Firepad.fromCodeMirror(database.ref('pad'), codeMirror, {
             richTextShortcuts: true,
             richTextToolbar: true,
-            defaultText: 'Welcome to RBTkaPad!\n\nStart typing your document here...\n\nThis is a collaborative editor powered by Firepad and Firebase.',
+            defaultText: 'Welcome to RBTkaWordPad!\n\nStart typing your document here...\n\nThis is a collaborative editor powered by Firepad and Firebase.',
             userColors: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff', '#5f27cd']
         });
         
