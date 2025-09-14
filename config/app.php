@@ -219,16 +219,16 @@ return [
              * The keys host, port, timeout, username, password, client and tls
              * are used in SMTP transports
              */
-            'host' => 'localhost',
-            'port' => 25,
+            'host' => env('EMAIL_HOST', 'localhost'),
+            'port' => env('EMAIL_PORT', 25),
             'timeout' => 30,
             /*
              * It is recommended to set these options through your environment or app_local.php
              */
-            //'username' => null,
-            //'password' => null,
-            'client' => null,
-            'tls' => false,
+            'username' => env('EMAIL_USERNAME', null),
+            'password' => env('EMAIL_PASSWORD', null),
+            'client' => env('EMAIL_CLIENT', null),
+            'tls' => env('EMAIL_TLS', false),
             'url' => env('EMAIL_TRANSPORT_DEFAULT_URL', null),
         ],
     ],

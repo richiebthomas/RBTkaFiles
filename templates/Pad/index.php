@@ -32,13 +32,13 @@ $this->assign('title', 'RBTkaWordPad - Collaborative Editor');
 <script>
     // Your web app's Firebase configuration
     const firebaseConfig = {
-        apiKey: "AIzaSyAXY4HzCTejsyelLa5kuW3FEg2kjquw6zE",
-        authDomain: "rbtpad-4221e.firebaseapp.com",
-        databaseURL: "https://rbtpad-4221e-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "rbtpad-4221e",
-        storageBucket: "rbtpad-4221e.firebasestorage.app",
-        messagingSenderId: "678212231875",
-        appId: "1:678212231875:web:b1bcc7fef0906abcd1f876"
+        apiKey: "<?= Configure::read('Firebase.apiKey') ?>",
+        authDomain: "<?= Configure::read('Firebase.authDomain') ?>",
+        databaseURL: "<?= Configure::read('Firebase.databaseURL') ?>",
+        projectId: "<?= Configure::read('Firebase.projectId') ?>",
+        storageBucket: "<?= Configure::read('Firebase.storageBucket') ?>",
+        messagingSenderId: "<?= Configure::read('Firebase.messagingSenderId') ?>",
+        appId: "<?= Configure::read('Firebase.appId') ?>"
     };
     
     // Initialize Firebase

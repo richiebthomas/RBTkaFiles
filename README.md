@@ -155,6 +155,21 @@ Edit `config/app_local.php`:
 2. Enable Realtime Database
 3. Add your Firebase config to `config/app_local.php`
 
+The Firebase configuration is stored in `config/app_local.php`:
+```php
+'Firebase' => [
+    'apiKey' => 'your_api_key_here',
+    'authDomain' => 'your_project.firebaseapp.com',
+    'databaseURL' => 'https://your_project-default-rtdb.region.firebasedatabase.app',
+    'projectId' => 'your_project_id',
+    'storageBucket' => 'your_project.firebasestorage.app',
+    'messagingSenderId' => 'your_sender_id',
+    'appId' => 'your_app_id',
+],
+```
+
+The configuration is automatically loaded and used in the templates.
+
 ## How to Contribute
 
 ### Setting Up Development Environment
