@@ -41,13 +41,30 @@
         .pad-content {
             flex: 1;
             overflow: hidden;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .document-wrapper {
+            width: 100%;
+            max-width: 8.5in; /* Standard letter size width */
+            background: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
         }
         
         #firepad-container {
-            height: 100%;
+            flex: 1;
             width: 100%;
-            border: 1px solid #dee2e6;
-            border-radius: 0.375rem;
+            border: none;
+            border-radius: 0;
+            overflow: hidden;
         }
         
         .firepad-toolbar {
@@ -59,8 +76,25 @@
         
         .CodeMirror {
             height: calc(100% - 50px) !important;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            font-size: 14px;
+            font-family: 'Calibri', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 11pt; /* Standard Word font size */
+            line-height: 1.15;
+            background: white;
+        }
+        
+        .CodeMirror-scroll {
+            height: 100% !important;
+            overflow: auto !important;
+        }
+        
+        .CodeMirror-lines {
+            padding: 0.5in 0.5in 0.5in 0.5in !important; /* 0.5 inch margins on all sides */
+        }
+        
+        /* MS Word-like styling */
+        .firepad .CodeMirror .CodeMirror-line {
+            line-height: 1.15; /* Single spacing like Word */
+            margin-bottom: 0;
         }
         
         /* Firepad toolbar styling */
@@ -72,6 +106,8 @@
             align-items: center;
             gap: 5px;
             flex-wrap: wrap;
+            position: relative;
+            z-index: 10;
         }
         
         .firepad .firepad-toolbar button {
@@ -94,117 +130,118 @@
             border-color: #007bff;
         }
         
-         /* Print styles - hide toolbar and buttons when printing */
+         /* Print styles - simple and clean */
          @media print {
+             /* Hide UI elements */
+             .pad-header,
+             .firepad-toolbar,
+             .firepad .firepad-toolbar,
+             .CodeMirror-cursors,
+             .CodeMirror-cursor,
+             .CodeMirror-gutters,
+             .resize-handle {
+                 display: none !important;
+             }
+             
+             /* Hide Firepad watermark */
+             .firepad-watermark,
+             .firepad .firepad-watermark,
+             [class*="watermark"],
+             [id*="watermark"] {
+                 display: none !important;
+                 visibility: hidden !important;
+                 opacity: 0 !important;
+             }
+             
+             /* Reset everything for print */
+             * {
+                 -webkit-print-color-adjust: exact !important;
+                 color-adjust: exact !important;
+             }
+             
              body {
                  margin: 0 !important;
                  padding: 0 !important;
                  background: white !important;
+                 font-size: 11pt !important;
+                 line-height: 1.15 !important;
+                 color: black !important;
              }
              
-             .pad-header {
-                 display: none !important;
-             }
-             
-             .firepad-toolbar {
-                 display: none !important;
-             }
-             
-             .firepad .firepad-toolbar {
-                 display: none !important;
-             }
-             
-             .pad-container {
+             /* Make all containers visible and flow naturally */
+             .pad-container,
+             .pad-content,
+             .document-wrapper,
+             #firepad-container,
+             .CodeMirror,
+             .CodeMirror-scroll,
+             .CodeMirror-sizer,
+             .CodeMirror-lines {
                  height: auto !important;
-                 display: block !important;
-             }
-             
-             .pad-content {
-                 flex: none !important;
+                 min-height: auto !important;
+                 max-height: none !important;
                  overflow: visible !important;
-                 height: auto !important;
-             }
-             
-             #firepad-container {
-                 height: auto !important;
+                 background: white !important;
+                 color: black !important;
+                 display: block !important;
+                 position: static !important;
+                 margin: 0 !important;
+                 padding: 0 !important;
                  border: none !important;
                  box-shadow: none !important;
                  border-radius: 0 !important;
              }
              
-             .CodeMirror {
-                 height: auto !important;
-                 min-height: auto !important;
-                 border: none !important;
-                 box-shadow: none !important;
-                 overflow: visible !important;
-                 background: white !important;
-                 font-size: 12pt !important;
-                 line-height: 1.4 !important;
-                 color: #000 !important;
-             }
-             
-             .CodeMirror-scroll {
-                 height: auto !important;
-                 min-height: auto !important;
-                 overflow: visible !important;
-                 background: white !important;
-             }
-             
-             .CodeMirror-sizer {
-                 height: auto !important;
-                 min-height: auto !important;
-             }
-             
+             /* Set document margins */
              .CodeMirror-lines {
-                 padding: 20px !important;
-                 height: auto !important;
-                 min-height: auto !important;
+                 padding: 0.5in 0.5in 0.5in 0.5in !important;
              }
              
+             /* Ensure text is visible */
              .CodeMirror-line {
-                 padding: 0 !important;
+                 color: black !important;
+                 background: transparent !important;
                  height: auto !important;
                  min-height: 1.4em !important;
-                 page-break-inside: avoid;
+                 line-height: 1.15 !important;
+                 font-size: 11pt !important;
+                 font-family: 'Calibri', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif !important;
              }
              
-             /* Ensure images print properly */
-             .CodeMirror img {
+             /* Images */
+             .CodeMirror img,
+             .resizable-image-container img {
+                 display: block !important;
+                 margin: 10px 0 !important;
                  max-width: 100% !important;
                  height: auto !important;
-                 page-break-inside: avoid !important;
-                 margin: 10px 0 !important;
+                 background: white !important;
+             }
+             
+             .resizable-image-container {
                  display: block !important;
+                 position: static !important;
+                 margin: 10px 0 !important;
+                 max-width: 100% !important;
              }
              
-             /* Line widgets for images */
              .CodeMirror-linewidget {
-                 page-break-inside: avoid !important;
+                 display: block !important;
+                 position: static !important;
+                 margin: 0 !important;
+                 padding: 0 !important;
              }
              
-             /* Hide any other UI elements */
-             .CodeMirror-cursors,
-             .CodeMirror-cursor,
-             .CodeMirror-gutters {
-                 display: none !important;
-             }
-             
-             /* Ensure proper page breaks */
-             .CodeMirror-line {
-                 page-break-inside: avoid;
-             }
-             
-             /* Allow content to flow across pages */
-             .CodeMirror {
-                 page-break-inside: auto;
-             }
-             
-             /* Force all content to be visible */
-             * {
-                 overflow: visible !important;
+             /* Hide image placeholder text but keep the line visible for the widget */
+             .CodeMirror-line[data-image-line="true"] {
+                 color: transparent !important;
+                 font-size: 0 !important;
+                 line-height: 0 !important;
+                 height: 0 !important;
+                 overflow: hidden !important;
              }
          }
+         
         
         .CodeMirror-focused .CodeMirror-cursor {
             border-left: 1px solid #000;
@@ -222,23 +259,18 @@
             background: #f9f9f9;
         }
         
-        /* Hide image markers from view */
+        /* Hide image markers from view - use JavaScript approach instead */
         .CodeMirror-line {
             position: relative;
         }
         
-        /* Hide text that contains image markers */
-        .CodeMirror .cm-line:has-text("[IMAGE:") {
+        /* Hide lines that contain image markers */
+        .CodeMirror-line[data-image-line="true"] {
             color: transparent !important;
             font-size: 0 !important;
             line-height: 0 !important;
             height: 0 !important;
-        }
-        
-        /* Alternative approach for hiding image markers */
-        .CodeMirror-line span:contains("[IMAGE:") {
-            color: transparent;
-            font-size: 0;
+            overflow: hidden !important;
         }
         
         /* Firepad rich text styling */

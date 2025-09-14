@@ -20,7 +20,9 @@ $this->assign('title', 'RBTkaWordPad - Collaborative Editor');
 </div>
 
 <div class="pad-content">
-    <div id="firepad-container"></div>
+    <div class="document-wrapper">
+        <div id="firepad-container"></div>
+    </div>
 </div>
 
 <!-- Firebase SDK v8 (compatible with Firepad) -->
@@ -75,11 +77,16 @@ $this->assign('title', 'RBTkaWordPad - Collaborative Editor');
             document.getElementById('firepad-status').textContent = 'Connected';
             document.getElementById('firepad-status').className = 'badge badge-success';
             
-        // Setup image rendering
-        setupImageRendering();
-        
-        // Setup global keyboard handling for images
-        setupGlobalImageKeyboardHandling();
+            // Setup image rendering
+            setupImageRendering();
+            
+            // Setup global keyboard handling for images
+            setupGlobalImageKeyboardHandling();
+            
+            // Force initial image rendering after a short delay
+            setTimeout(() => {
+                renderImages();
+            }, 500);
         });
         
         firepad.on('synced', function(isSynced) {
@@ -174,7 +181,8 @@ $this->assign('title', 'RBTkaWordPad - Collaborative Editor');
     function insertImageIntoFirepad(imageUrl) {
         if (firepad) {
             // Insert a unique image marker that will be rendered as an image
-            const imageMarker = `[IMAGE:${imageUrl}]`;
+            // Add default dimensions (will be updated when image loads)
+            const imageMarker = `[IMAGE:${imageUrl}:400:300]`;
             
             // Get current cursor position in Firepad
             const cursor = codeMirror.getCursor();
@@ -377,6 +385,18 @@ $this->assign('title', 'RBTkaWordPad - Collaborative Editor');
             const line = doc.getLine(i);
             const lineHandle = doc.getLineHandle(i);
             
+            // Remove data attribute from lines that no longer have image markers
+            if (lineHandle && lineHandle.lineElement) {
+                if (!line || !line.includes('[IMAGE:')) {
+                    lineHandle.lineElement.removeAttribute('data-image-line');
+                    lineHandle.lineElement.style.color = '';
+                    lineHandle.lineElement.style.fontSize = '';
+                    lineHandle.lineElement.style.lineHeight = '';
+                    lineHandle.lineElement.style.height = '';
+                    lineHandle.lineElement.style.overflow = '';
+                }
+            }
+            
             if (lineHandle.widgets) {
                 // If line doesn't have an image marker, remove the widget
                 if (!line || !line.includes('[IMAGE:')) {
@@ -399,6 +419,16 @@ $this->assign('title', 'RBTkaWordPad - Collaborative Editor');
                     const width = match[2] || null;
                     const height = match[3] || null;
                     const lineHandle = doc.getLineHandle(i);
+                    
+                    // Mark this line as an image line and hide the text
+                    if (lineHandle && lineHandle.lineElement) {
+                        lineHandle.lineElement.setAttribute('data-image-line', 'true');
+                        lineHandle.lineElement.style.color = 'transparent';
+                        lineHandle.lineElement.style.fontSize = '0';
+                        lineHandle.lineElement.style.lineHeight = '0';
+                        lineHandle.lineElement.style.height = '0';
+                        lineHandle.lineElement.style.overflow = 'hidden';
+                    }
                     
                     // Check if this line already has an image widget
                     const hasImageWidget = lineHandle.widgets && 
@@ -808,10 +838,108 @@ $this->assign('title', 'RBTkaWordPad - Collaborative Editor');
         }
     });
     
-    // Print document function - use native browser print
+    // Print document function - extract HTML and print in new window
     function printDocument() {
-        // Simply trigger the native browser print dialog
-        window.print();
+        if (!firepad) {
+            alert('Editor not ready');
+            return;
+        }
+        
+        // Force image rendering before getting HTML
+        renderImages();
+        
+        // Small delay to ensure images are rendered
+        setTimeout(() => {
+            // Get the full HTML from Firepad
+            let htmlContent = firepad.getHtml();
+            
+            // Process image markers in the HTML content
+            htmlContent = htmlContent.replace(/\[IMAGE:([^\]]+)\]/g, function(match, imageData) {
+                const parts = imageData.split(':');
+                if (parts.length >= 3) {
+                    const url = parts[0];
+                    const width = parts[1];
+                    const height = parts[2];
+                    
+                    // Clean up width/height values (remove any existing 'px')
+                    const cleanWidth = width.replace(/px$/, '');
+                    const cleanHeight = height.replace(/px$/, '');
+                    
+                    return `<img src="${url}" style="max-width: 100%; width: ${cleanWidth}px; height: ${cleanHeight}px; display: block; margin: 10px 0;" />`;
+                } else if (parts.length === 1) {
+                    // Incomplete image marker - just URL, add default dimensions
+                    const url = parts[0];
+                    return `<img src="${url}" style="max-width: 100%; width: 400px; height: 300px; display: block; margin: 10px 0;" />`;
+                }
+                return match; // Return original if can't parse
+            });
+            
+            // Create a new window for printing
+            const printWindow = window.open('', '_blank', 'width=800,height=600');
+            
+            // Write the HTML content to the new window
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Document Print</title>
+                    <style>
+                        body {
+                            font-family: 'Calibri', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+                            font-size: 11pt;
+                            line-height: 1.15;
+                            margin: 0;
+                            padding: 0.5in;
+                            color: #000;
+                            background: white;
+                        }
+                        img {
+                            max-width: 100%;
+                            height: auto;
+                            display: block;
+                            margin: 10px 0;
+                        }
+                        p {
+                            margin: 0 0 1em 0;
+                        }
+                        @media print {
+                            body {
+                                margin: 0;
+                                padding: 0.5in;
+                            }
+                        }
+                        
+                        /* Hide Firepad watermark */
+                        .firepad-watermark,
+                        .firepad .firepad-watermark,
+                        [class*="watermark"],
+                        [id*="watermark"] {
+                            display: none !important;
+                            visibility: hidden !important;
+                            opacity: 0 !important;
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${htmlContent}
+                </body>
+                </html>
+            `);
+            
+            printWindow.document.close();
+            
+            // Wait for content to load, then print
+            printWindow.onload = function() {
+                setTimeout(() => {
+                    printWindow.print();
+                    // Close the window after printing
+                    setTimeout(() => {
+                        printWindow.close();
+                    }, 1000);
+                }, 500);
+            };
+        }, 100);
     }
     
     // Get editor content for printing with proper image handling
