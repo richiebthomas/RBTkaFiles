@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use Cake\Controller\Controller;
+use Cake\Core\Configure;
 
 /**
  * Application Controller
@@ -43,6 +44,10 @@ class AppController extends Controller
 
         $this->loadComponent('Flash');
         $this->loadComponent('VisitTracker');
+
+        // Set Firebase configuration for all views
+        $firebaseConfig = Configure::read('Firebase');
+        $this->set('firebaseConfig', $firebaseConfig);
 
         /*
          * Enable the following component for recommended CakePHP form protection settings.

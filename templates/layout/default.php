@@ -122,15 +122,23 @@ $appTitle = 'RBTkaFiles';
         import { getDatabase } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         
         // Your web app's Firebase configuration
+        <?php 
+        $firebaseConfig = $this->get('firebaseConfig');
+        if (!$firebaseConfig) {
+            // Fallback: Load directly from config
+            $firebaseConfig = \Cake\Core\Configure::read('Firebase');
+        }
+        ?>
         const firebaseConfig = {
-            apiKey: "<?= Configure::read('Firebase.apiKey') ?>",
-            authDomain: "<?= Configure::read('Firebase.authDomain') ?>",
-            databaseURL: "<?= Configure::read('Firebase.databaseURL') ?>",
-            projectId: "<?= Configure::read('Firebase.projectId') ?>",
-            storageBucket: "<?= Configure::read('Firebase.storageBucket') ?>",
-            messagingSenderId: "<?= Configure::read('Firebase.messagingSenderId') ?>",
-            appId: "<?= Configure::read('Firebase.appId') ?>"
+            apiKey: "<?= h($firebaseConfig['apiKey'] ?? '') ?>",
+            authDomain: "<?= h($firebaseConfig['authDomain'] ?? '') ?>",
+            databaseURL: "<?= h($firebaseConfig['databaseURL'] ?? '') ?>",
+            projectId: "<?= h($firebaseConfig['projectId'] ?? '') ?>",
+            storageBucket: "<?= h($firebaseConfig['storageBucket'] ?? '') ?>",
+            messagingSenderId: "<?= h($firebaseConfig['messagingSenderId'] ?? '') ?>",
+            appId: "<?= h($firebaseConfig['appId'] ?? '') ?>"
         };
+        
         
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
