@@ -304,20 +304,28 @@ RBTkaFiles/
 ## Acknowledgments
 
 - **CakePHP Team** for the excellent framework  
-  ![CakePHP Logo](https://github.com/user-attachments/assets/94509c26-4b4b-4220-b828-de182acff572)  
-  *CakePHP*
+  <p align="center">
+    <img src="https://github.com/user-attachments/assets/94509c26-4b4b-4220-b828-de182acff572" alt="CakePHP Logo" width="300"/>
+    <br><em>CakePHP</em>
+  </p>
 
 - **Firebase** for real-time collaboration features  
-  ![Firebase Logo](https://github.com/user-attachments/assets/e3e5e889-9afe-4836-ae04-377323369ee8)  
-  *Firebase*
+  <p align="center">
+    <img src="https://github.com/user-attachments/assets/e3e5e889-9afe-4836-ae04-377323369ee8" alt="Firebase Logo" width="300"/>
+    <br><em>Firebase</em>
+  </p>
 
 - **Bootstrap** for the responsive UI components  
-  ![Bootstrap Logo](https://github.com/user-attachments/assets/a73512fe-d6e5-4fc6-ac24-677d37bc0dde)  
-  *Bootstrap*
+  <p align="center">
+    <img src="https://github.com/user-attachments/assets/a73512fe-d6e5-4fc6-ac24-677d37bc0dde" alt="Bootstrap Logo" width="300"/>
+    <br><em>Bootstrap</em>
+  </p>
 
 - **InfinityFree** for the free hosting services  
-  ![InfinityFree Logo](https://github.com/user-attachments/assets/d31fd4ca-860e-4f0e-bff6-e796567431d9)  
-  *InfinityFree*
+  <p align="center">
+    <img src="https://github.com/user-attachments/assets/d31fd4ca-860e-4f0e-bff6-e796567431d9" alt="InfinityFree Logo" width="300"/>
+    <br><em>InfinityFree</em>
+  </p>
 
 
 **Made with ❤️ by Richie B. Thomas (RBT)**
