@@ -87,6 +87,10 @@ return function (RouteBuilder $routes): void {
         
         // Specific route for marks page
         $builder->connect('/marks', ['controller' => 'Pages', 'action' => 'marks']);
+        
+        // Pad route for Firepad editor
+        $builder->connect('/pad', ['controller' => 'Pad', 'action' => 'index']);
+        $builder->post('/pad/upload-image', ['controller' => 'Pad', 'action' => 'uploadImage']);
 
         /*
          * Connect catchall routes for all controllers.

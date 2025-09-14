@@ -115,6 +115,38 @@ $appTitle = 'RBTkaFiles';
     <!-- Bootstrap JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.2/js/bootstrap.bundle.min.js"></script>
     
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAXY4HzCTejsyelLa5kuW3FEg2kjquw6zE",
+            authDomain: "rbtpad-4221e.firebaseapp.com",
+            databaseURL: "https://rbtpad-4221e-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "rbtpad-4221e",
+            storageBucket: "rbtpad-4221e.firebasestorage.app",
+            messagingSenderId: "678212231875",
+            appId: "1:678212231875:web:b1bcc7fef0906abcd1f876"
+        };
+        
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        
+        // Make Firebase available globally
+        window.firebaseApp = app;
+        window.firebaseDatabase = database;
+    </script>
+    
+    <!-- Firepad CSS -->
+    <link rel="stylesheet" href="https://cdn.firepad.io/releases/v1.5.9/firepad.css" />
+    
+    <!-- Firepad JS -->
+    <script src="https://cdn.firepad.io/releases/v1.5.9/firepad.min.js"></script>
+    
     <!-- Custom JS -->
     <?= $this->fetch('script') ?>
 </body>

@@ -34,6 +34,11 @@ $this->assign('title', 'RBTkaFiles');
                     Upload Files
                     <input type="file" id="file-input" multiple hidden>
                 </label>
+                
+                <button class="action-button" id="btn-open-pad">
+                    <i class="fas fa-edit"></i>
+                    Open Pad
+                </button>
             </div>
 
             <!-- Upload Progress (moved to top) -->
@@ -250,6 +255,34 @@ $this->assign('title', 'RBTkaFiles');
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- Firepad Modal -->
+<div class="modal fade" id="firepadModal" tabindex="-1" role="dialog" style="z-index: 9999;">
+    <div class="modal-dialog modal-xl" role="document" style="max-width: 95vw; height: 90vh;">
+        <div class="modal-content" style="height: 100%;">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit"></i> RTF Editor
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" style="padding: 0; height: calc(100% - 120px);">
+                <div id="firepad-container" style="height: 100%; width: 100%;"></div>
+            </div>
+            <div class="modal-footer">
+                <div class="mr-auto">
+                    <span id="firepad-status" class="badge badge-info">Connecting...</span>
+                </div>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" id="btn-save-rtf" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save as RTF
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -1276,5 +1309,5 @@ $this->Html->scriptEnd();
 // Add the notes CSS inline to avoid loading issues
 
 // Add the file manager script
-$this->Html->script('file-manager.min', ['block' => true]);
+$this->Html->script('file-manager', ['block' => true]);
 ?>
