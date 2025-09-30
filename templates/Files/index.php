@@ -76,12 +76,34 @@ $this->assign('title', 'RBTkaFiles');
                 </table>
                 </div>
                 
-                <!-- Loading spinner positioned below table headers -->
-                <div id="loading" class="text-center py-3">
-                    <div class="spinner-border" role="status">
-                        <span class="sr-only">Loading...</span>
+                <!-- Loading skeleton positioned below table headers -->
+                <div id="loading" class="py-3">
+                    <div class="skeleton-table">
+                        <div class="skeleton-row">
+                            <div class="skeleton-cell name"></div>
+                            <div class="skeleton-cell size"></div>
+                        </div>
+                        <div class="skeleton-row">
+                            <div class="skeleton-cell name"></div>
+                            <div class="skeleton-cell size"></div>
+                        </div>
+                        <div class="skeleton-row">
+                            <div class="skeleton-cell name"></div>
+                            <div class="skeleton-cell size"></div>
+                        </div>
+                        <div class="skeleton-row">
+                            <div class="skeleton-cell name"></div>
+                            <div class="skeleton-cell size"></div>
+                        </div>
+                        <div class="skeleton-row">
+                            <div class="skeleton-cell name"></div>
+                            <div class="skeleton-cell size"></div>
+                        </div>
+                        <div class="skeleton-row">
+                            <div class="skeleton-cell name"></div>
+                            <div class="skeleton-cell size"></div>
+                        </div>
                     </div>
-                    <div class="mt-2">Loading files...</div>
                 </div>
                 
                 <div id="empty-folder" class="text-center py-5" style="display: none;">
@@ -105,9 +127,13 @@ $this->assign('title', 'RBTkaFiles');
                 </div>
                 
                 <div class="preview-content">
-                    <div id="preview-loading" class="text-center py-4" style="display: none;">
-                        <div class="spinner-border" role="status"></div>
-                        <div class="mt-2">Loading preview...</div>
+                    <div id="preview-loading" class="py-4" style="display: none;">
+                        <div class="skeleton-preview">
+                            <div class="skeleton-line w-75"></div>
+                            <div class="skeleton-line w-100"></div>
+                            <div class="skeleton-line w-100"></div>
+                            <div class="skeleton-line w-50"></div>
+                        </div>
                     </div>
                     
                     <div id="preview-body">
@@ -1294,6 +1320,62 @@ body {
 
 .note-content:not(.collapsed)::-webkit-scrollbar-thumb:hover {
     background: #3aa89e;
+}
+</style>
+<style>
+/* Skeleton styles */
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #f0f2f5 25%, #e6e9ef 37%, #f0f2f5 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.4s ease infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+.skeleton-table { padding: 0 16px; }
+.skeleton-row { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #edf2f7; }
+.skeleton-cell { height: 14px; border-radius: 6px; }
+.skeleton-cell.name { flex: 1; max-width: 70%; }
+.skeleton-cell.size { width: 80px; margin-left: auto; }
+.skeleton-cell { background: #f0f2f5; }
+.skeleton-cell.name, .skeleton-cell.size { position: relative; overflow: hidden; }
+.skeleton-cell.name::before, .skeleton-cell.size::before { content: ''; position: absolute; inset: 0; }
+.skeleton-cell.name::before, .skeleton-cell.size::before { background: linear-gradient(90deg, rgba(240,242,245,0) 0%, rgba(230,233,239,0.9) 50%, rgba(240,242,245,0) 100%); transform: translateX(-100%); animation: slide 1.4s infinite; }
+
+@keyframes slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.skeleton-preview { padding: 0 16px; }
+.skeleton-line { height: 14px; background: #f0f2f5; border-radius: 6px; margin-bottom: 10px; position: relative; overflow: hidden; }
+.skeleton-line.w-75 { width: 75%; }
+.skeleton-line.w-100 { width: 100%; }
+.skeleton-line.w-50 { width: 50%; }
+.skeleton-line::before { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(240,242,245,0) 0%, rgba(230,233,239,0.9) 50%, rgba(240,242,245,0) 100%); transform: translateX(-100%); animation: slide 1.4s infinite; }
+
+/* Staggered animation for natural effect */
+.skeleton-table .skeleton-row:nth-child(1) .skeleton-cell::before { animation-delay: 0ms; }
+.skeleton-table .skeleton-row:nth-child(2) .skeleton-cell::before { animation-delay: 100ms; }
+.skeleton-table .skeleton-row:nth-child(3) .skeleton-cell::before { animation-delay: 200ms; }
+.skeleton-table .skeleton-row:nth-child(4) .skeleton-cell::before { animation-delay: 300ms; }
+.skeleton-table .skeleton-row:nth-child(5) .skeleton-cell::before { animation-delay: 400ms; }
+.skeleton-table .skeleton-row:nth-child(6) .skeleton-cell::before { animation-delay: 500ms; }
+
+.skeleton-preview .skeleton-line:nth-child(1)::before { animation-delay: 0ms; }
+.skeleton-preview .skeleton-line:nth-child(2)::before { animation-delay: 120ms; }
+.skeleton-preview .skeleton-line:nth-child(3)::before { animation-delay: 240ms; }
+.skeleton-preview .skeleton-line:nth-child(4)::before { animation-delay: 360ms; }
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-cell::before,
+  .skeleton-line::before {
+    animation: none;
+  }
 }
 </style>
 

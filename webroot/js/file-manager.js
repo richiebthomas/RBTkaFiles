@@ -554,10 +554,29 @@ class FileManager {
     }
 
     uploadFiles(files) {
+        const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+        const accepted = [];
+        const rejected = [];
+        for (let i = 0; i < files.length; i++) {
+            const f = files[i];
+            if (f.size > MAX_FILE_SIZE) {
+                rejected.push(`${f.name} (${this.formatSize(f.size)})`);
+            } else {
+                accepted.push(f);
+            }
+        }
+
+        if (rejected.length) {
+            this.showError(`These files exceed 50MB and were skipped: ${rejected.join(', ')}`);
+        }
+        if (accepted.length === 0) {
+            return;
+        }
+
         let formData = new FormData();
         formData.append('parent_path', this.currentPath);
-        for (let i = 0; i < files.length; i++) {
-            formData.append('files[]', files[i]);
+        for (let i = 0; i < accepted.length; i++) {
+            formData.append('files[]', accepted[i]);
         }
         this.showUploadProgress();
         $.ajax({
@@ -1104,11 +1123,11 @@ hidePreview() {
     this.currentPreviewFile = null;
 }
 
-showPreviewLoading() {
-    $('#preview-loading').show();
-    $('#preview-body').hide();
-    $('.preview-filename').text('Loading...');
-}
+    showPreviewLoading() {
+        $('#preview-loading').show();
+        $('#preview-body').hide();
+        // Keep current filename text; no loading text
+    }
 
 hidePreviewLoading() {
     $('#preview-loading').hide();

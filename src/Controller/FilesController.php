@@ -259,6 +259,7 @@ class FilesController extends AppController
         $results = [];
         $uploadPath = $this->getUploadPath();
 
+        $maxSize = 50 * 1024 * 1024; // 50MB
         foreach ($uploadedFiles['files'] as $uploadedFile) {
             if ($uploadedFile->getError() !== UPLOAD_ERR_OK) {
                 $results[] = ['success' => false, 'name' => $uploadedFile->getClientFilename(), 'message' => 'Upload error'];
@@ -266,6 +267,16 @@ class FilesController extends AppController
             }
             
             $originalName = $uploadedFile->getClientFilename();
+            
+            // Enforce max size (50MB)
+            if ($uploadedFile->getSize() > $maxSize) {
+                $results[] = [
+                    'success' => false,
+                    'name' => $originalName,
+                    'message' => 'File exceeds 50MB limit'
+                ];
+                continue;
+            }
             
             // Check for dangerous file extensions
             if ($this->isDangerousFile($originalName)) {
