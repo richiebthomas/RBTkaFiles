@@ -280,31 +280,79 @@ class FilesController extends AppController
                 $counter++;
             }
 
-            // Generate unique filename for disk storage
-            $diskFilename = Text::uuid() . '.' . $extension;
-            $fullDiskPath = $uploadPath . DS . $diskFilename;
+            $fileSize = $uploadedFile->getSize();
+            $useSupabase = $fileSize > (4 * 1024 * 1024); // 4MB threshold
 
             try {
-                $uploadedFile->moveTo($fullDiskPath);
-                
-                $fileItem = $this->FileItems->newEntity([
-                    'name' => basename($filePath),
-                    'type' => 'file',
-                    'path' => $filePath,
-                    'parent_path' => $parentPath,
-                    'mime_type' => $uploadedFile->getClientMediaType(),
-                    'size' => $uploadedFile->getSize(),
-                    'filename_on_disk' => $diskFilename,
-                ]);
+                if ($useSupabase) {
+                    // Upload to Supabase for files larger than 4MB
+                    $supabaseService = new \App\Service\SupabaseStorageService();
+                    
+                    // Generate unique filename for Supabase
+                    $supabaseFilename = Text::uuid() . '.' . $extension;
+                    $supabasePath = $parentPath ? $parentPath . '/' . $supabaseFilename : $supabaseFilename;
+                    
+                    // First move to temp location
+                    $tempPath = $uploadedFile->getStream()->getMetadata('uri');
+                    
+                    $uploadResult = $supabaseService->uploadFile(
+                        $tempPath,
+                        $supabasePath,
+                        [
+                            'contentType' => $uploadedFile->getClientMediaType(),
+                            'upsert' => false
+                        ]
+                    );
+                    
+                    if (!$uploadResult['success']) {
+                        $results[] = ['success' => false, 'name' => $originalName, 'message' => 'Failed to upload to Supabase: ' . $uploadResult['error']];
+                        continue;
+                    }
+                    
+                    $fileItem = $this->FileItems->newEntity([
+                        'name' => basename($filePath),
+                        'type' => 'file',
+                        'path' => $filePath,
+                        'parent_path' => $parentPath,
+                        'mime_type' => $uploadedFile->getClientMediaType(),
+                        'size' => $fileSize,
+                        'filename_on_disk' => null,
+                        'supabase_path' => $supabasePath,
+                        'storage_type' => 'supabase',
+                    ]);
+                } else {
+                    // Store locally for files smaller than 4MB
+                    $diskFilename = Text::uuid() . '.' . $extension;
+                    $fullDiskPath = $uploadPath . DS . $diskFilename;
+                    
+                    $uploadedFile->moveTo($fullDiskPath);
+                    
+                    $fileItem = $this->FileItems->newEntity([
+                        'name' => basename($filePath),
+                        'type' => 'file',
+                        'path' => $filePath,
+                        'parent_path' => $parentPath,
+                        'mime_type' => $uploadedFile->getClientMediaType(),
+                        'size' => $fileSize,
+                        'filename_on_disk' => $diskFilename,
+                        'supabase_path' => null,
+                        'storage_type' => 'local',
+                    ]);
+                }
 
                 if ($this->FileItems->save($fileItem)) {
                     $results[] = ['success' => true, 'name' => $originalName, 'item' => $fileItem];
                 } else {
-                    unlink($fullDiskPath); // Clean up file
+                    // Clean up file based on storage type
+                    if ($useSupabase) {
+                        $supabaseService->deleteFile($supabasePath);
+                    } else {
+                        unlink($fullDiskPath);
+                    }
                     $results[] = ['success' => false, 'name' => $originalName, 'message' => 'Failed to save file info'];
                 }
             } catch (\Exception $e) {
-                $results[] = ['success' => false, 'name' => $originalName, 'message' => 'Failed to save file'];
+                $results[] = ['success' => false, 'name' => $originalName, 'message' => 'Failed to save file: ' . $e->getMessage()];
             }
         }
 
@@ -459,33 +507,49 @@ class FilesController extends AppController
         }
 
         if ($item->isFile()) {
-            // Move physical file to deleted subdirectory instead of deleting it
-            $uploadPath = $this->getUploadPath();
-            $deletedDir = $uploadPath . DS . 'deleted';
-            $fullPath = $uploadPath . DS . $item->filename_on_disk;
-            
-            // Create deleted directory if it doesn't exist
-            if (!is_dir($deletedDir)) {
-                mkdir($deletedDir, 0755, true);
-            }
-            
-            if (file_exists($fullPath)) {
-                // Create deleted filename: deleted_originalname.extension
-                $pathInfo = pathinfo($item->name);
-                $deletedFilename = 'deleted_' . $pathInfo['basename'];
-                $deletedPath = $deletedDir . DS . $deletedFilename;
+            if ($item->isSupabaseStored()) {
+                // Handle Supabase file deletion with rename
+                $supabaseService = new \App\Service\SupabaseStorageService();
                 
-                // Check if deleted filename already exists, add counter if needed
-                $counter = 1;
-                while (file_exists($deletedPath)) {
-                    $deletedFilename = 'deleted_' . $pathInfo['filename'] . '_' . $counter . '.' . $pathInfo['extension'];
-                    $deletedPath = $deletedDir . DS . $deletedFilename;
-                    $counter++;
+                // Create deleted filename: deleted_originalname_randomstring.extension
+                $pathInfo = pathinfo($item->name);
+                $randomString = substr(str_shuffle('abcdefghijklmnopqrstuvwxyz0123456789'), 0, 5);
+                $deletedFilename = 'deleted_' . $pathInfo['filename'] . '_' . $randomString . '.' . $pathInfo['extension'];
+                $deletedPath = 'deleted/' . $deletedFilename;
+                
+                // Rename the file in Supabase
+                if (!$supabaseService->renameFile($item->supabase_path, $deletedPath)) {
+                    $this->log('Warning: Failed to rename Supabase file to deleted: ' . $item->supabase_path, 'warning');
+                }
+            } else {
+                // Move physical file to deleted subdirectory instead of deleting it
+                $uploadPath = $this->getUploadPath();
+                $deletedDir = $uploadPath . DS . 'deleted';
+                $fullPath = $uploadPath . DS . $item->filename_on_disk;
+                
+                // Create deleted directory if it doesn't exist
+                if (!is_dir($deletedDir)) {
+                    mkdir($deletedDir, 0755, true);
                 }
                 
-                // Move the file to deleted directory
-                if (!rename($fullPath, $deletedPath)) {
-                    $this->log('Warning: Failed to move file to deleted directory: ' . $fullPath, 'warning');
+                if (file_exists($fullPath)) {
+                    // Create deleted filename: deleted_originalname.extension
+                    $pathInfo = pathinfo($item->name);
+                    $deletedFilename = 'deleted_' . $pathInfo['basename'];
+                    $deletedPath = $deletedDir . DS . $deletedFilename;
+                    
+                    // Check if deleted filename already exists, add counter if needed
+                    $counter = 1;
+                    while (file_exists($deletedPath)) {
+                        $deletedFilename = 'deleted_' . $pathInfo['filename'] . '_' . $counter . '.' . $pathInfo['extension'];
+                        $deletedPath = $deletedDir . DS . $deletedFilename;
+                        $counter++;
+                    }
+                    
+                    // Move the file to deleted directory
+                    if (!rename($fullPath, $deletedPath)) {
+                        $this->log('Warning: Failed to move file to deleted directory: ' . $fullPath, 'warning');
+                    }
                 }
             }
         } else {
@@ -518,19 +582,31 @@ class FilesController extends AppController
             throw new NotFoundException('File not found');
         }
 
-        $uploadPath = $this->getUploadPath();
-        $fullPath = $uploadPath . DS . $item->filename_on_disk;
-
-        if (!file_exists($fullPath)) {
-            throw new NotFoundException('Physical file not found');
-        }
-
         // Set appropriate content type
         $mimeType = $item->mime_type ?: 'application/octet-stream';
         
-        return $this->response->withFile($fullPath)
-                             ->withType($mimeType)
-                             ->withHeader('Content-Disposition', 'inline; filename="' . $item->name . '"');
+        if ($item->isSupabaseStored()) {
+            // For Supabase files, redirect to the public URL
+            $publicUrl = $item->getPublicUrl();
+            if (!$publicUrl) {
+                throw new NotFoundException('Supabase file URL not available');
+            }
+            
+            return $this->response->withHeader('Location', $publicUrl)
+                                 ->withStatus(302);
+        } else {
+            // For local files, serve directly
+            $uploadPath = $this->getUploadPath();
+            $fullPath = $uploadPath . DS . $item->filename_on_disk;
+
+            if (!file_exists($fullPath)) {
+                throw new NotFoundException('Physical file not found');
+            }
+            
+            return $this->response->withFile($fullPath)
+                                 ->withType($mimeType)
+                                 ->withHeader('Content-Disposition', 'inline; filename="' . $item->name . '"');
+        }
     }
 
     /**
@@ -832,15 +908,27 @@ class FilesController extends AppController
             throw new NotFoundException('File not found');
         }
 
-        $uploadPath = $this->getUploadPath();
-        $fullPath = $uploadPath . DS . $item->filename_on_disk;
+        if ($item->isSupabaseStored()) {
+            // For Supabase files, redirect to the public URL
+            $publicUrl = $item->getPublicUrl();
+            if (!$publicUrl) {
+                throw new NotFoundException('Supabase file URL not available');
+            }
+            
+            return $this->response->withHeader('Location', $publicUrl)
+                                 ->withStatus(302);
+        } else {
+            // For local files, serve directly
+            $uploadPath = $this->getUploadPath();
+            $fullPath = $uploadPath . DS . $item->filename_on_disk;
 
-        if (!file_exists($fullPath)) {
-            throw new NotFoundException('Physical file not found');
+            if (!file_exists($fullPath)) {
+                throw new NotFoundException('Physical file not found');
+            }
+
+            return $this->response->withFile($fullPath)
+                                 ->withDownload($item->name);
         }
-
-        return $this->response->withFile($fullPath)
-                             ->withDownload($item->name);
     }
 
     /**
@@ -1137,33 +1225,49 @@ class FilesController extends AppController
 
         foreach ($children as $child) {
             if ($child->isFile()) {
-                // Move physical file to deleted subdirectory instead of deleting it
-                $uploadPath = $this->getUploadPath();
-                $deletedDir = $uploadPath . DS . 'deleted';
-                $fullPath = $uploadPath . DS . $child->filename_on_disk;
-                
-                // Create deleted directory if it doesn't exist
-                if (!is_dir($deletedDir)) {
-                    mkdir($deletedDir, 0755, true);
-                }
-                
-                if (file_exists($fullPath)) {
-                    // Create deleted filename: deleted_originalname.extension
-                    $pathInfo = pathinfo($child->name);
-                    $deletedFilename = 'deleted_' . $pathInfo['basename'];
-                    $deletedPath = $deletedDir . DS . $deletedFilename;
+                if ($child->isSupabaseStored()) {
+                    // Handle Supabase file deletion with rename
+                    $supabaseService = new \App\Service\SupabaseStorageService();
                     
-                    // Check if deleted filename already exists, add counter if needed
-                    $counter = 1;
-                    while (file_exists($deletedPath)) {
-                        $deletedFilename = 'deleted_' . $pathInfo['filename'] . '__' . $counter . '.' . $pathInfo['extension'];
-                        $deletedPath = $deletedDir . DS . $deletedFilename;
-                        $counter++;
+                    // Create deleted filename: deleted_originalname_randomstring.extension
+                    $pathInfo = pathinfo($child->name);
+                    $randomString = substr(str_shuffle('abcdefghijklmnopqrstuvwxyz0123456789'), 0, 5);
+                    $deletedFilename = 'deleted_' . $pathInfo['filename'] . '_' . $randomString . '.' . $pathInfo['extension'];
+                    $deletedPath = 'deleted/' . $deletedFilename;
+                    
+                    // Rename the file in Supabase
+                    if (!$supabaseService->renameFile($child->supabase_path, $deletedPath)) {
+                        $this->log('Warning: Failed to rename Supabase child file to deleted: ' . $child->supabase_path, 'warning');
+                    }
+                } else {
+                    // Move physical file to deleted subdirectory instead of deleting it
+                    $uploadPath = $this->getUploadPath();
+                    $deletedDir = $uploadPath . DS . 'deleted';
+                    $fullPath = $uploadPath . DS . $child->filename_on_disk;
+                    
+                    // Create deleted directory if it doesn't exist
+                    if (!is_dir($deletedDir)) {
+                        mkdir($deletedDir, 0755, true);
                     }
                     
-                    // Move the file to deleted directory
-                    if (!rename($fullPath, $deletedPath)) {
-                        $this->log('Warning: Failed to move child file to deleted directory: ' . $fullPath, 'warning');
+                    if (file_exists($fullPath)) {
+                        // Create deleted filename: deleted_originalname.extension
+                        $pathInfo = pathinfo($child->name);
+                        $deletedFilename = 'deleted_' . $pathInfo['basename'];
+                        $deletedPath = $deletedDir . DS . $deletedFilename;
+                        
+                        // Check if deleted filename already exists, add counter if needed
+                        $counter = 1;
+                        while (file_exists($deletedPath)) {
+                            $deletedFilename = 'deleted_' . $pathInfo['filename'] . '__' . $counter . '.' . $pathInfo['extension'];
+                            $deletedPath = $deletedDir . DS . $deletedFilename;
+                            $counter++;
+                        }
+                        
+                        // Move the file to deleted directory
+                        if (!rename($fullPath, $deletedPath)) {
+                            $this->log('Warning: Failed to move child file to deleted directory: ' . $fullPath, 'warning');
+                        }
                     }
                 }
             }

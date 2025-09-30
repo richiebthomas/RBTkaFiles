@@ -16,6 +16,8 @@ use Cake\ORM\Entity;
  * @property string|null $mime_type
  * @property int|null $size
  * @property string|null $filename_on_disk
+ * @property string|null $supabase_path
+ * @property string $storage_type
  * @property \Cake\I18n\DateTime $created
  * @property \Cake\I18n\DateTime $modified
  */
@@ -38,6 +40,8 @@ class FileItem extends Entity
         'mime_type' => true,
         'size' => true,
         'filename_on_disk' => true,
+        'supabase_path' => true,
+        'storage_type' => true,
         'created' => true,
         'modified' => true,
     ];
@@ -84,5 +88,42 @@ class FileItem extends Entity
         }
         
         return pathinfo($this->name, PATHINFO_EXTENSION);
+    }
+
+    /**
+     * Check if file is stored in Supabase
+     */
+    public function isSupabaseStored(): bool
+    {
+        return $this->storage_type === 'supabase' && !empty($this->supabase_path);
+    }
+
+    /**
+     * Get the actual file path (local or Supabase)
+     */
+    public function getStoragePath(): string
+    {
+        if ($this->isSupabaseStored()) {
+            return $this->supabase_path;
+        }
+        
+        return $this->filename_on_disk ?? '';
+    }
+
+    /**
+     * Get the public URL for the file
+     */
+    public function getPublicUrl(): ?string
+    {
+        if ($this->isSupabaseStored()) {
+            try {
+                $supabaseService = new \App\Service\SupabaseStorageService();
+                return $supabaseService->getPublicUrl($this->supabase_path);
+            } catch (\Exception $e) {
+                return null;
+            }
+        }
+        
+        return null;
     }
 }

@@ -415,4 +415,13 @@ return [
             'session.cookie_secure' => 0, // Set to 1 if using HTTPS
         ],
     ],
+
+    /*
+     * Supabase Configuration
+     */
+    'Supabase' => [
+        'url' => env('SUPABASE_URL'),
+        'key' => env('SUPABASE_ANON_KEY'),
+        'bucket_name' => env('SUPABASE_BUCKET_NAME', 'files'),
+    ],
 ];
