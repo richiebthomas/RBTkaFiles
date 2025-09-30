@@ -885,7 +885,7 @@ class FileManager {
                         const url = window.URL.createObjectURL(blob);
                         const newWindow = window.open(url, '_blank');
                         if (newWindow) {
-                            $('#printModal').modal('hide');
+                            // Keep the print modal open after success
                             this.showSuccess('PDF prepared for printing!');
                             setTimeout(() => {
                                 window.URL.revokeObjectURL(url);
@@ -943,7 +943,7 @@ class FileManager {
             document.body.appendChild(tempForm);
             tempForm.submit();
             document.body.removeChild(tempForm);
-            $('#printModal').modal('hide');
+            // Keep the print modal open after success
             this.showSuccess('PDF prepared for printing!');
         };
         if (window.Blob && window.URL && window.URL.createObjectURL) {

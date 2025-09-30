@@ -289,7 +289,7 @@ class FilesController extends AppController
             }
 
             $fileSize = $uploadedFile->getSize();
-            $useSupabase = $fileSize > (4 * 1024 * 1024); // 4MB threshold
+            $useSupabase = $fileSize > (4* 1024 * 1024); // 4MB threshold
 
             try {
                 if ($useSupabase) {
@@ -867,12 +867,26 @@ class FilesController extends AppController
                 throw new BadRequestException('Only PDF files can be printed');
             }
 
-            // Get physical file path
-            $uploadPath = $this->getUploadPath();
-            $fullPath = $uploadPath . DS . $item->filename_on_disk;
-
-            if (!file_exists($fullPath)) {
-                throw new NotFoundException('Physical file not found');
+            // Resolve source PDF path: download from Supabase to temp if needed
+            $sourcePdfPath = null;
+            if ($item->isSupabaseStored()) {
+                // Download bytes from Supabase and persist to a temp file
+                $supabaseService = new \App\Service\SupabaseStorageService();
+                $pdfBytes = $supabaseService->downloadFile($item->supabase_path);
+                if ($pdfBytes === null) {
+                    throw new NotFoundException('Unable to download PDF from Supabase');
+                }
+                $tmpName = Text::uuid() . '.pdf';
+                $sourcePdfPath = $tempDir . DS . $tmpName;
+                file_put_contents($sourcePdfPath, $pdfBytes);
+            } else {
+                // Local storage
+                $uploadPath = $this->getUploadPath();
+                $fullPath = $uploadPath . DS . $item->filename_on_disk;
+                if (!file_exists($fullPath)) {
+                    throw new NotFoundException('Physical file not found');
+                }
+                $sourcePdfPath = $fullPath;
             }
 
             // Save/update user in database
@@ -882,12 +896,33 @@ class FilesController extends AppController
             $this->updatePrintJobs($roll);
 
             // Process PDF with user details
-            $modifiedPdfPath = $this->processPdfForPrint($fullPath, $name, $roll, $lab);
+            $modifiedPdfPath = $this->processPdfForPrint($sourcePdfPath, $name, $roll, $lab);
 
-            // Return the modified PDF
-            return $this->response->withFile($modifiedPdfPath)
-                                 ->withType('application/pdf')
-                                 ->withHeader('Content-Disposition', 'inline; filename="printed_' . $item->name . '"');
+            // If original was in Supabase, upload the modified temp PDF back to Supabase under a temp path and redirect user there
+            if ($item->isSupabaseStored()) {
+                $supabaseService = $supabaseService ?? new \App\Service\SupabaseStorageService();
+                $tempSupabaseName = 'temp/printed_' . pathinfo($item->name, PATHINFO_FILENAME) . '_' . substr(str_shuffle('abcdefghijklmnopqrstuvwxyz0123456789'), 0, 5) . '.pdf';
+                $upload = $supabaseService->uploadFile($modifiedPdfPath, $tempSupabaseName, [
+                    'contentType' => 'application/pdf',
+                    'upsert' => true,
+                ]);
+                if (!($upload['success'] ?? false)) {
+                    throw new \RuntimeException('Failed to upload printed PDF to Supabase: ' . ($upload['error'] ?? 'unknown'));
+                }
+                // Optionally cleanup local temp files
+                if ($sourcePdfPath && str_starts_with($sourcePdfPath, $tempDir)) {
+                    @unlink($sourcePdfPath);
+                }
+                @unlink($modifiedPdfPath);
+                // Redirect to public URL of temp file so it opens in a new window
+                return $this->response->withHeader('Location', $upload['url'])
+                                     ->withStatus(302);
+            }
+
+            // For local files, redirect to the temp file URL so it opens in a new tab
+            $publicTempUrl = '/temp/' . basename($modifiedPdfPath);
+            return $this->response->withHeader('Location', $publicTempUrl)
+                                 ->withStatus(302);
 
         } catch (\Exception $e) {
             $this->log('Error in print: ' . $e->getMessage(), 'error');
