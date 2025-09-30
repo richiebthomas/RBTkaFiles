@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c0886c5b34457db673be9cc54bec0a7a",
+    "content-hash": "a65da1ac4e059b05e5f2b72a11abd450",
     "packages": [
         {
             "name": "bayfrontmedia/php-mime-types",
@@ -4701,16 +4701,16 @@
         },
         {
             "name": "cakephp/debug_kit",
-            "version": "5.1.3",
+            "version": "5.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/cakephp/debug_kit.git",
-                "reference": "6c33eb2993d790d98a27a47a74a10330d699ac07"
+                "reference": "9df73d208464dd807e88b9d6b87ccc64f4c02f8d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/cakephp/debug_kit/zipball/6c33eb2993d790d98a27a47a74a10330d699ac07",
-                "reference": "6c33eb2993d790d98a27a47a74a10330d699ac07",
+                "url": "https://api.github.com/repos/cakephp/debug_kit/zipball/9df73d208464dd807e88b9d6b87ccc64f4c02f8d",
+                "reference": "9df73d208464dd807e88b9d6b87ccc64f4c02f8d",
                 "shasum": ""
             },
             "require": {
@@ -4762,7 +4762,7 @@
                 "issues": "https://github.com/cakephp/debug_kit/issues",
                 "source": "https://github.com/cakephp/debug_kit"
             },
-            "time": "2025-08-03T15:06:57+00:00"
+            "time": "2024-09-14T03:01:20+00:00"
         },
         {
             "name": "cakephp/twig-view",

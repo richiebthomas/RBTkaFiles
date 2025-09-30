@@ -7,6 +7,9 @@ use Cake\Http\Exception\NotFoundException;
 use Cake\Http\Exception\BadRequestException;
 use Cake\Http\Response;
 use Cake\Utility\Text;
+use App\Model\Table\FileItemsTable;
+use App\Model\Table\UsersTable;
+use App\Model\Table\DirectoryNotesTable;
 use App\Model\Table\PrintJobsTable;
 
 /**
@@ -18,6 +21,11 @@ use App\Model\Table\PrintJobsTable;
  */
 class FilesController extends AppController
 {
+    protected FileItemsTable $FileItems;
+    protected UsersTable $Users;
+    protected DirectoryNotesTable $DirectoryNotes;
+    protected PrintJobsTable $PrintJobs;
+
     public function initialize(): void
     {
         parent::initialize();
