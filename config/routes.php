@@ -88,8 +88,19 @@ return function (RouteBuilder $routes): void {
         // Specific route for marks page
         $builder->connect('/marks', ['controller' => 'Pages', 'action' => 'marks']);
         
-        // Pad route for Firepad editor
+        // Pad routes for multi-pad Firepad editor
         $builder->connect('/pad', ['controller' => 'Pad', 'action' => 'index']);
+        $builder->connect('/pad/{id}', ['controller' => 'Pad', 'action' => 'index'])
+            ->setPatterns(['id' => '\d+'])
+            ->setPass(['id']);
+        $builder->post('/pad/create', ['controller' => 'Pad', 'action' => 'create']);
+        $builder->post('/pad/delete/{id}', ['controller' => 'Pad', 'action' => 'delete'])
+            ->setPatterns(['id' => '\d+'])
+            ->setPass(['id']);
+        $builder->post('/pad/rename/{id}', ['controller' => 'Pad', 'action' => 'rename'])
+            ->setPatterns(['id' => '\d+'])
+            ->setPass(['id']);
+        $builder->get('/pad/list', ['controller' => 'Pad', 'action' => 'list']);
         $builder->post('/pad/upload-image', ['controller' => 'Pad', 'action' => 'uploadImage']);
 
         /*

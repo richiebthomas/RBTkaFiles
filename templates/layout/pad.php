@@ -31,6 +31,127 @@
             flex-direction: column;
         }
         
+        .pad-main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        .pad-sidebar {
+            width: 280px;
+            background: white;
+            border-right: 1px solid #dee2e6;
+            display: flex;
+            flex-direction: column;
+            transition: margin-left 0.3s ease;
+        }
+        
+        .pad-sidebar.collapsed {
+            margin-left: -280px;
+        }
+        
+        .sidebar-header {
+            padding: 15px;
+            border-bottom: 1px solid #dee2e6;
+            background: #f8f9fa;
+        }
+        
+        .sidebar-header h5 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .pad-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        
+        .pad-item {
+            padding: 10px 12px;
+            margin-bottom: 5px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid transparent;
+        }
+        
+        .pad-item:hover {
+            background-color: #f8f9fa;
+            border-color: #dee2e6;
+        }
+        
+        .pad-item.active {
+            background-color: #e3f2fd;
+            border-color: #007bff;
+        }
+        
+        .pad-item-name {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #212529;
+        }
+        
+        .pad-item-actions {
+            display: none;
+            gap: 5px;
+        }
+        
+        .pad-item:hover .pad-item-actions,
+        .pad-item.active .pad-item-actions {
+            display: flex;
+        }
+        
+        .pad-item-action-btn {
+            padding: 2px 6px;
+            font-size: 12px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: #6c757d;
+            transition: color 0.2s;
+        }
+        
+        .pad-item-action-btn:hover {
+            color: #007bff;
+        }
+        
+        .pad-item-action-btn.delete:hover {
+            color: #dc3545;
+        }
+        
+        .sidebar-toggle {
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 30px;
+            height: 60px;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-left: none;
+            border-radius: 0 6px 6px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+            transition: left 0.3s ease;
+        }
+        
+        .sidebar-toggle.collapsed {
+            left: 280px;
+        }
+        
         .pad-header {
             background: white;
             border-bottom: 1px solid #dee2e6;
@@ -45,6 +166,7 @@
             display: flex;
             justify-content: center;
             padding: 20px;
+            position: relative;
         }
         
         .document-wrapper {
@@ -317,7 +439,9 @@
 </head>
 <body>
     <div class="pad-container">
-        <?= $this->fetch('content') ?>
+        <div class="pad-main">
+            <?= $this->fetch('content') ?>
+        </div>
     </div>
 
     <!-- jQuery -->

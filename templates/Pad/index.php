@@ -1,27 +1,60 @@
 <?php
 /**
- * Pad Index Template - Simple Firepad Editor
+ * Pad Index Template - Multi-Pad Firepad Editor
  */
 $this->assign('title', 'RBTkaWordPad - Collaborative Editor');
 ?>
 
-<div class="pad-header">
-    <div class="d-flex justify-content-between align-items-center">
-        <h4 class="mb-0">
-            <i class="fas fa-edit text-primary"></i> RBTkaWordPad
-        </h4>
-        <div>
-            <span id="firepad-status" class="badge badge-info">Connecting...</span>
-            <button id="btn-print" class="btn btn-success btn-sm ml-2">
-                <i class="fas fa-print"></i> Print
-            </button>
-        </div>
+<!-- Sidebar -->
+<div class="pad-sidebar" id="padSidebar">
+    <div class="sidebar-header">
+        <h5><i class="fas fa-file-alt"></i> My Pads</h5>
+        <button class="btn btn-primary btn-sm btn-block" id="btn-new-pad">
+            <i class="fas fa-plus"></i> New Pad
+        </button>
+    </div>
+    <div class="pad-list" id="padList">
+        <?php foreach ($pads as $pad): ?>
+            <div class="pad-item <?= $pad->id === $currentPad->id ? 'active' : '' ?>" data-pad-id="<?= h($pad->id) ?>">
+                <span class="pad-item-name"><?= h($pad->name) ?></span>
+                <div class="pad-item-actions">
+                    <button class="pad-item-action-btn rename" title="Rename">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="pad-item-action-btn delete" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        <?php endforeach; ?>
     </div>
 </div>
 
-<div class="pad-content">
-    <div class="document-wrapper">
-        <div id="firepad-container"></div>
+<!-- Sidebar Toggle Button -->
+<div class="sidebar-toggle" id="sidebarToggle">
+    <i class="fas fa-chevron-left"></i>
+</div>
+
+<!-- Main Content Area -->
+<div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+    <div class="pad-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">
+                <i class="fas fa-edit text-primary"></i> <span id="current-pad-name"><?= h($currentPad->name) ?></span>
+            </h4>
+            <div>
+                <span id="firepad-status" class="badge badge-info">Connecting...</span>
+                <button id="btn-print" class="btn btn-success btn-sm ml-2">
+                    <i class="fas fa-print"></i> Print
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="pad-content">
+        <div class="document-wrapper">
+            <div id="firepad-container"></div>
+        </div>
     </div>
 </div>
 
@@ -53,30 +86,37 @@ $this->assign('title', 'RBTkaWordPad - Collaborative Editor');
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
     
+    // Current pad ID
+    let currentPadId = <?= $currentPad->id ?>;
+    
     // Initialize Firepad
     let firepad;
     let codeMirror;
     let insertedImages = []; // Store information about inserted images
     
     // Wait for Firepad to load
-    function initFirepad() {
+    function initFirepad(padId) {
         if (typeof Firepad === 'undefined') {
-            setTimeout(initFirepad, 100);
+            setTimeout(() => initFirepad(padId), 100);
             return;
         }
         
+        // Clear existing editor if it exists
+        const container = document.getElementById('firepad-container');
+        container.innerHTML = '';
+        
         // Create CodeMirror instance
-        codeMirror = CodeMirror(document.getElementById('firepad-container'), {
+        codeMirror = CodeMirror(container, {
             lineWrapping: true,
             mode: 'text/html',
             theme: 'default'
         });
         
-        // Create Firepad instance
-        firepad = Firepad.fromCodeMirror(database.ref('pad'), codeMirror, {
+        // Create Firepad instance with unique reference for this pad
+        firepad = Firepad.fromCodeMirror(database.ref('pads/' + padId), codeMirror, {
             richTextShortcuts: true,
             richTextToolbar: true,
-            defaultText: 'Welcome to RBTkaWordPad!\n\nStart typing your document here...\n\nThis is a collaborative editor powered by Firepad and Firebase.',
+            defaultText: 'Welcome to this pad!\n\nStart typing your document here...\n\nThis is a collaborative editor powered by Firepad and Firebase.',
             userColors: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff', '#5f27cd']
         });
         
@@ -110,17 +150,162 @@ $this->assign('title', 'RBTkaWordPad - Collaborative Editor');
     
     // Initialize when page loads
     document.addEventListener('DOMContentLoaded', function() {
-        initFirepad();
+        initFirepad(currentPadId);
         
         // Print button
         document.getElementById('btn-print').addEventListener('click', function() {
             printDocument();
         });
         
-        
         // Add image paste functionality
         setupImagePaste();
+        
+        // Sidebar functionality
+        setupSidebar();
     });
+    
+    // Setup sidebar functionality
+    function setupSidebar() {
+        const sidebar = document.getElementById('padSidebar');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        
+        // Toggle sidebar
+        sidebarToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('collapsed');
+            sidebarToggle.classList.toggle('collapsed');
+            const icon = sidebarToggle.querySelector('i');
+            if (sidebar.classList.contains('collapsed')) {
+                icon.className = 'fas fa-chevron-right';
+            } else {
+                icon.className = 'fas fa-chevron-left';
+            }
+        });
+        
+        // New pad button
+        document.getElementById('btn-new-pad').addEventListener('click', createNewPad);
+        
+        // Pad item click handlers
+        document.querySelectorAll('.pad-item').forEach(item => {
+            const padId = item.getAttribute('data-pad-id');
+            
+            // Click on pad name to switch
+            item.querySelector('.pad-item-name').addEventListener('click', () => switchToPad(padId));
+            
+            // Rename button
+            const renameBtn = item.querySelector('.rename');
+            if (renameBtn) {
+                renameBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    renamePad(padId, item);
+                });
+            }
+            
+            // Delete button
+            const deleteBtn = item.querySelector('.delete');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deletePad(padId);
+                });
+            }
+        });
+    }
+    
+    // Create new pad
+    function createNewPad() {
+        const name = prompt('Enter pad name:');
+        if (!name) return;
+        
+        fetch('/pad/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': '<?= $this->request->getAttribute('csrfToken') ?>'
+            },
+            body: JSON.stringify({ name: name })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = '/pad/' + data.pad.id;
+            } else {
+                alert('Failed to create pad: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error creating pad:', error);
+            alert('Failed to create pad');
+        });
+    }
+    
+    // Switch to a different pad
+    function switchToPad(padId) {
+        window.location.href = '/pad/' + padId;
+    }
+    
+    // Rename pad
+    function renamePad(padId, itemElement) {
+        const currentName = itemElement.querySelector('.pad-item-name').textContent;
+        const newName = prompt('Enter new name:', currentName);
+        if (!newName || newName === currentName) return;
+        
+        fetch('/pad/rename/' + padId, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': '<?= $this->request->getAttribute('csrfToken') ?>'
+            },
+            body: JSON.stringify({ name: newName })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                itemElement.querySelector('.pad-item-name').textContent = newName;
+                if (padId == currentPadId) {
+                    document.getElementById('current-pad-name').textContent = newName;
+                }
+            } else {
+                alert('Failed to rename pad: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error renaming pad:', error);
+            alert('Failed to rename pad');
+        });
+    }
+    
+    // Delete pad
+    function deletePad(padId) {
+        if (!confirm('Are you sure you want to delete this pad? This action cannot be undone.')) {
+            return;
+        }
+        
+        fetch('/pad/delete/' + padId, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': '<?= $this->request->getAttribute('csrfToken') ?>'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (padId == currentPadId) {
+                    // If deleting current pad, redirect to index
+                    window.location.href = '/pad';
+                } else {
+                    // Just remove from list
+                    document.querySelector(`.pad-item[data-pad-id="${padId}"]`).remove();
+                }
+            } else {
+                alert('Failed to delete pad: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting pad:', error);
+            alert('Failed to delete pad');
+        });
+    }
     
     // Setup image paste functionality
     function setupImagePaste() {
