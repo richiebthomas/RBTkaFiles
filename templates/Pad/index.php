@@ -94,6 +94,42 @@ $this->assign('title', 'RBTkaWordPad - Collaborative Editor');
     let codeMirror;
     let insertedImages = []; // Store information about inserted images
     
+    // Array of random default texts for new pads
+    const defaultTexts = [
+        'Welcome to your new pad!\n\nStart typing your thoughts here...\n\nThis is a collaborative editor powered by Firepad and Firebase.',
+
+        'Ready to capture your ideas?\n\nThis editor supports rich text formatting and real-time collaboration.\n\nStart typing or paste images to get started!',
+
+        'Yeah i know, naming it "Pad" is kinda lame, but it\'s what Firepad uses, so i\'m sticking with it. Also i dont want people to think this is a word processor.',
+
+        'You can also write sad poems here. You know what? ill start with one- Woh mere liye crown thi aur mein uske liye clown',
+
+        'Cursor is my only true friend',
+
+        'What is the meaning of life? it is to love and to be loved',
+
+        'The only way to do great work is to love what you do.',
+
+        'No ones ever using this anyway so ill just reveal who my crush is- its Aryan Nair (1022216) from Computer Engineering',
+
+        'If you want to add your own default message here, you can do so by contributing to the project on GitHub. Go to https://github.com/richiebthomas/RBTkaFiles',
+
+        'Dont send hate, send PR(Pyar)s. Dont commit hate, commit code.',
+
+        'These messages, unlike the code, are written by a human.',
+
+        'Comparison is the thief of joy.',
+
+        
+
+
+    ];
+    
+    // Get a random default text
+    function getRandomDefaultText() {
+        return defaultTexts[Math.floor(Math.random() * defaultTexts.length)];
+    }
+    
     // Wait for Firepad to load
     function initFirepad(padId) {
         if (typeof Firepad === 'undefined') {
@@ -116,7 +152,7 @@ $this->assign('title', 'RBTkaWordPad - Collaborative Editor');
         firepad = Firepad.fromCodeMirror(database.ref('pads/' + padId), codeMirror, {
             richTextShortcuts: true,
             richTextToolbar: true,
-            defaultText: 'Welcome to this pad!\n\nStart typing your document here...\n\nThis is a collaborative editor powered by Firepad and Firebase.',
+            defaultText: getRandomDefaultText(),
             userColors: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff', '#5f27cd']
         });
         
