@@ -37,23 +37,23 @@ $this->assign('title', 'RBTkaWordPad - Collaborative Editor');
 
 <!-- Main Content Area -->
 <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
-    <div class="pad-header">
-        <div class="d-flex justify-content-between align-items-center">
-            <h4 class="mb-0">
+<div class="pad-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">
                 <i class="fas fa-edit text-primary"></i> <span id="current-pad-name"><?= h($currentPad->name) ?></span>
-            </h4>
-            <div>
-                <span id="firepad-status" class="badge badge-info">Connecting...</span>
-                <button id="btn-print" class="btn btn-success btn-sm ml-2">
-                    <i class="fas fa-print"></i> Print
-                </button>
-            </div>
+        </h4>
+        <div>
+            <span id="firepad-status" class="badge badge-info">Connecting...</span>
+            <button id="btn-print" class="btn btn-success btn-sm ml-2">
+                <i class="fas fa-print"></i> Print
+            </button>
         </div>
     </div>
+</div>
 
-    <div class="pad-content">
-        <div class="document-wrapper">
-            <div id="firepad-container"></div>
+<div class="pad-content">
+    <div class="document-wrapper">
+        <div id="firepad-container"></div>
         </div>
     </div>
 </div>
