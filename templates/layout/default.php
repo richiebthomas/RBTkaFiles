@@ -111,6 +111,43 @@ $appTitle = 'RBTkaFiles';
             0 1px 4px rgba(255, 204, 0, 0.3);
     }
 
+    /* User Count Indicator */
+    .user-count {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0;
+        margin-right: 20px;
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.5);
+        transition: all 0.3s ease;
+        cursor: default;
+    }
+
+    .user-count:hover {
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .user-count-dot {
+        width: 7px;
+        height: 7px;
+        background: #4ade80;
+        border-radius: 50%;
+        box-shadow: 0 0 6px rgba(74, 222, 128, 0.6);
+        animation: pulse-glow 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-glow {
+        0%, 100% { 
+            opacity: 1;
+            transform: scale(1);
+        }
+        50% { 
+            opacity: 0.6;
+            transform: scale(0.95);
+        }
+    }
+
     .broadcast-ticker-text {
         white-space: nowrap;
         color: #ffcc00;
@@ -152,7 +189,13 @@ $appTitle = 'RBTkaFiles';
             <!-- Broadcast Ticker -->
             <div class="broadcast-ticker" id="broadcastTicker" title="Click to send a broadcast message"></div>
             
-            <div class="ms-auto">
+            <div class="ms-auto d-flex align-items-center">
+                <!-- User Count -->
+                <div class="user-count" title="Users online right now">
+                    <span class="user-count-dot"></span>
+                    <span id="userCount">0</span>
+                    <span style="opacity: 0.6; font-size: 11px;">online</span>
+                </div>
                 <a href="<?= $this->Url->build('/marks') ?>" class="btn btn-outline-light me-2">
                     <i class="fas fa-graduation-cap"></i> Marks
                 </a>
@@ -182,17 +225,15 @@ $appTitle = 'RBTkaFiles';
     <!-- Bootstrap JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.2/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Firebase SDK -->
-    <script type="module">
-        // Import the functions you need from the SDKs you need
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-        
-        // Your web app's Firebase configuration
+    <!-- Firebase SDK v8 for Realtime Database (lazy loaded) -->
+    <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <script>
+        // Firebase configuration
         <?php 
         $firebaseConfig = $this->get('firebaseConfig');
         if (!$firebaseConfig) {
-            // Fallback: Load directly from config
             $firebaseConfig = \Cake\Core\Configure::read('Firebase');
         }
         ?>
@@ -206,37 +247,65 @@ $appTitle = 'RBTkaFiles';
             appId: "<?= h($firebaseConfig['appId'] ?? '') ?>"
         };
         
+        // Lazy load Firebase features after main content is ready
+        function initializeFirebaseFeatures() {
+            // Check if Firebase is loaded
+            if (typeof firebase === 'undefined') {
+                // Retry after a short delay
+                setTimeout(initializeFirebaseFeatures, 100);
+                return;
+            }
         
         // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
-        
-        // Make Firebase available globally
-        window.firebaseApp = app;
-        window.firebaseDatabase = database;
-    </script>
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
 
-    <!-- Firebase SDK v8 for Realtime Database (for broadcast) -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+            // Initialize features when browser is idle
+            const runWhenIdle = window.requestIdleCallback || function(cb) { setTimeout(cb, 1); };
+            
+            runWhenIdle(function() {
+                initUserPresence();
+                initBroadcastTicker();
+            });
+        }
 
-    <script>
-        // Initialize Firebase v8 for broadcast (using v8 for simpler API)
-        if (!firebase.apps.length) {
-            firebase.initializeApp({
-                apiKey: "<?= h($firebaseConfig['apiKey'] ?? '') ?>",
-                authDomain: "<?= h($firebaseConfig['authDomain'] ?? '') ?>",
-                databaseURL: "<?= h($firebaseConfig['databaseURL'] ?? '') ?>",
-                projectId: "<?= h($firebaseConfig['projectId'] ?? '') ?>",
-                storageBucket: "<?= h($firebaseConfig['storageBucket'] ?? '') ?>",
-                messagingSenderId: "<?= h($firebaseConfig['messagingSenderId'] ?? '') ?>",
-                appId: "<?= h($firebaseConfig['appId'] ?? '') ?>"
+        // User Presence Tracking
+        function initUserPresence() {
+            const presenceRef = firebase.database().ref('presence');
+            const userCountElement = document.getElementById('userCount');
+            
+            if (!userCountElement) return;
+            
+            // Generate a unique user ID for this session
+            const userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            const myPresenceRef = presenceRef.child(userId);
+            
+            // Monitor connection state
+            const connectedRef = firebase.database().ref('.info/connected');
+            connectedRef.on('value', function(snapshot) {
+                if (snapshot.val() === true) {
+                    // When I disconnect, remove this user
+                    myPresenceRef.onDisconnect().remove();
+                    
+                    // Add this user to presence list
+                    myPresenceRef.set({
+                        timestamp: firebase.database.ServerValue.TIMESTAMP
+                    });
+                }
+            });
+            
+            // Listen for changes in user count
+            presenceRef.on('value', function(snapshot) {
+                const count = snapshot.numChildren();
+                userCountElement.textContent = count;
             });
         }
 
         // Broadcast Ticker Functionality
-        document.addEventListener('DOMContentLoaded', function() {
+        function initBroadcastTicker() {
             const ticker = document.getElementById('broadcastTicker');
+            if (!ticker) return;
             const broadcastQueueRef = firebase.database().ref('broadcastQueue');
             
             let isPlaying = false;
@@ -316,7 +385,15 @@ $appTitle = 'RBTkaFiles';
                 div.textContent = text;
                 return div.innerHTML;
             }
-        });
+        }
+
+        // Start loading Firebase features after DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeFirebaseFeatures);
+        } else {
+            // DOM already loaded
+            initializeFirebaseFeatures();
+        }
     </script>
     
     <!-- Firepad CSS -->
