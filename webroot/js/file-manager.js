@@ -541,28 +541,35 @@ class FileManager {
         $(e.target).val('');
     }
 
-    showUploadProgress() {
+    showUploadProgress(totalBytes = 0) {
         $('#upload-progress').show();
-        $('.progress-bar').css('width', '0%');
-        $('.upload-percentage').text('0%');
+        $('#data-sent').text('0 KB');
+        $('#data-total').text(this.formatSize(totalBytes));
+        $('#upload-percentage-display').text('0%');
+        $('#progress-fill').css('width', '0%');
     }
 
-    updateUploadProgress(percentage) {
+    updateUploadProgress(percentage, loaded = 0, total = 0) {
         const roundedPercentage = Math.round(percentage);
-        $('.progress-bar').css('width', roundedPercentage + '%');
-        $('.upload-percentage').text(roundedPercentage + '%');
+        $('#data-sent').text(this.formatSize(loaded));
+        $('#data-total').text(this.formatSize(total));
+        $('#upload-percentage-display').text(roundedPercentage + '%');
+        $('#progress-fill').css('width', roundedPercentage + '%');
     }
 
     uploadFiles(files) {
         const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
         const accepted = [];
         const rejected = [];
+        let totalSize = 0;
+        
         for (let i = 0; i < files.length; i++) {
             const f = files[i];
             if (f.size > MAX_FILE_SIZE) {
                 rejected.push(`${f.name} (${this.formatSize(f.size)})`);
             } else {
                 accepted.push(f);
+                totalSize += f.size;
             }
         }
 
@@ -578,7 +585,7 @@ class FileManager {
         for (let i = 0; i < accepted.length; i++) {
             formData.append('files[]', accepted[i]);
         }
-        this.showUploadProgress();
+        this.showUploadProgress(totalSize);
         $.ajax({
             url: '/api/upload',
             method: 'POST',
@@ -591,7 +598,7 @@ class FileManager {
                 xhr.upload.addEventListener("progress", (e) => {
                     if (e.lengthComputable) {
                         const percentComplete = (e.loaded / e.total) * 100;
-                        this.updateUploadProgress(percentComplete);
+                        this.updateUploadProgress(percentComplete, e.loaded, e.total);
                     }
                 }, false);
                 return xhr;

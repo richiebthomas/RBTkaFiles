@@ -43,12 +43,15 @@ $this->assign('title', 'RBTkaFiles');
 
             <!-- Upload Progress (moved to top) -->
             <div class="upload-progress" id="upload-progress" style="display: none;">
-                <div class="d-flex align-items-center">
-                    <div class="mr-2">Uploading...</div>
-                    <div class="progress flex-grow-1">
-                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
-                    </div>
-                    <div class="ml-2 upload-percentage">0%</div>
+                <div class="upload-info">
+                    <span class="upload-label">Uploading</span>
+                    <span class="upload-stats">
+                        <span id="upload-percentage-display">0%</span>
+                        <span class="upload-data">(<span id="data-sent">0 KB</span> / <span id="data-total">0 KB</span>)</span>
+                    </span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-fill" id="progress-fill"></div>
                 </div>
             </div>
 
@@ -682,34 +685,56 @@ body {
     background: #f3f4f6;
 }
 
-/* Progress bar for uploads */
+/* Minimalistic Progress Bar */
 .upload-progress {
     background: white;
     border-radius: 8px;
-    padding: 1rem;
+    padding: 16px;
     margin-bottom: 1rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border: 1px solid #e5e7eb;
 }
 
-.progress {
-    height: 6px;
-    border-radius: 3px;
-    background: #edf2f7;
-    margin: 0 1rem;
-    flex: 1;
+.upload-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 14px;
 }
 
-.progress-bar { 
-    background: #4ecdc4;
-    border-radius: 3px;
-    transition: width 0.2s ease;
-}
-
-.upload-percentage {
-    min-width: 48px;
-    text-align: right;
+.upload-label {
+    color: #374151;
     font-weight: 500;
-    color: #4a5568;
+}
+
+.upload-stats {
+    color: #6b7280;
+    font-size: 13px;
+}
+
+#upload-percentage-display {
+    font-weight: 600;
+    color: #374151;
+    margin-right: 4px;
+}
+
+.upload-data {
+    color: #9ca3af;
+}
+
+.progress-track {
+    height: 4px;
+    background: #e5e7eb;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: #3b82f6;
+    width: 0%;
+    transition: width 0.3s ease;
+    border-radius: 2px;
 }
 
 /* Table styles */
