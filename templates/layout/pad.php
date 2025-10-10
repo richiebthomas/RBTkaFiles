@@ -256,6 +256,20 @@
             padding: 32px 48px !important;
         }
         
+        /* Remove Firepad Watermark */
+        .firepad-watermark,
+        .firepad .firepad-watermark,
+        [class*="watermark"],
+        [id*="watermark"],
+        a[href*="firepad"] {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            height: 0 !important;
+            width: 0 !important;
+            position: absolute !important;
+            left: -9999px !important;
+        }
         
          /* Print styles - simple and clean */
          @media print {
