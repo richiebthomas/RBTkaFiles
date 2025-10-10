@@ -18,11 +18,15 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/firepad@1.5.9/dist/firepad.css" />
     
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
             padding: 0;
-            background-color: #f8f9fa;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #fafafa;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
         
         .pad-container {
@@ -37,44 +41,63 @@
             overflow: hidden;
         }
         
+        /* Modern Sidebar */
         .pad-sidebar {
-            width: 280px;
+            width: 260px;
             background: white;
-            border-right: 1px solid #dee2e6;
+            border-right: 1px solid #e5e7eb;
             display: flex;
             flex-direction: column;
-            transition: margin-left 0.3s ease;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         .pad-sidebar.collapsed {
-            margin-left: -280px;
+            transform: translateX(-100%);
         }
         
         .sidebar-header {
-            padding: 15px;
-            border-bottom: 1px solid #dee2e6;
-            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
         }
         
         .sidebar-header h5 {
-            margin: 0 0 10px 0;
-            font-size: 14px;
+            margin: 0 0 16px 0;
+            font-size: 13px;
             font-weight: 600;
-            color: #495057;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
         .pad-list {
             flex: 1;
             overflow-y: auto;
-            padding: 10px;
+            padding: 12px;
+        }
+        
+        .pad-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .pad-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .pad-list::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+        
+        .pad-list::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
         }
         
         .pad-item {
             padding: 10px 12px;
-            margin-bottom: 5px;
-            border-radius: 6px;
+            margin-bottom: 4px;
+            border-radius: 8px;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: all 0.2s ease;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -82,13 +105,13 @@
         }
         
         .pad-item:hover {
-            background-color: #f8f9fa;
-            border-color: #dee2e6;
+            background: #f9fafb;
+            border-color: #e5e7eb;
         }
         
         .pad-item.active {
-            background-color: #e3f2fd;
-            border-color: #007bff;
+            background: #eff6ff;
+            border-color: #3b82f6;
         }
         
         .pad-item-name {
@@ -98,12 +121,16 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            color: #212529;
+            color: #1f2937;
+        }
+        
+        .pad-item.active .pad-item-name {
+            color: #1e40af;
         }
         
         .pad-item-actions {
             display: none;
-            gap: 5px;
+            gap: 4px;
         }
         
         .pad-item:hover .pad-item-actions,
@@ -112,71 +139,94 @@
         }
         
         .pad-item-action-btn {
-            padding: 2px 6px;
+            padding: 4px 8px;
             font-size: 12px;
             background: transparent;
             border: none;
             cursor: pointer;
-            color: #6c757d;
-            transition: color 0.2s;
+            color: #9ca3af;
+            transition: all 0.2s;
+            border-radius: 4px;
         }
         
         .pad-item-action-btn:hover {
-            color: #007bff;
+            color: #3b82f6;
+            background: #eff6ff;
         }
         
         .pad-item-action-btn.delete:hover {
-            color: #dc3545;
+            color: #ef4444;
+            background: #fef2f2;
         }
         
         .sidebar-toggle {
-            position: absolute;
-            left: 0;
+            position: fixed;
+            left: 260px;
             top: 50%;
             transform: translateY(-50%);
-            width: 30px;
-            height: 60px;
+            width: 24px;
+            height: 48px;
             background: white;
-            border: 1px solid #dee2e6;
+            border: 1px solid #e5e7eb;
             border-left: none;
-            border-radius: 0 6px 6px 0;
+            border-radius: 0 8px 8px 0;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             z-index: 100;
-            transition: left 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .sidebar-toggle:hover {
+            background: #f9fafb;
         }
         
         .sidebar-toggle.collapsed {
-            left: 280px;
+            left: 0;
         }
         
+        .sidebar-toggle i {
+            color: #6b7280;
+            font-size: 12px;
+        }
+        
+        /* Modern Header */
         .pad-header {
             background: white;
-            border-bottom: 1px solid #dee2e6;
-            padding: 15px 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-bottom: 1px solid #e5e7eb;
+            padding: 16px 24px;
+        }
+        
+        .pad-header h4 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0;
+        }
+        
+        .pad-header h4 i {
+            color: #3b82f6;
+            margin-right: 8px;
         }
         
         .pad-content {
             flex: 1;
             overflow: hidden;
-            background-color: #f8f9fa;
+            background: #fafafa;
             display: flex;
             justify-content: center;
-            padding: 20px;
-            position: relative;
+            padding: 24px;
         }
         
         .document-wrapper {
             width: 100%;
-            max-width: 8.5in; /* Standard letter size width */
+            max-width: 8.5in;
             background: white;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+            border-radius: 8px;
             overflow: hidden;
-            position: relative;
             display: flex;
             flex-direction: column;
         }
@@ -185,22 +235,15 @@
             flex: 1;
             width: 100%;
             border: none;
-            border-radius: 0;
             overflow: hidden;
         }
         
-        .firepad-toolbar {
-            background-color: #f8f9fa;
-            border-bottom: 1px solid #dee2e6;
-            padding: 8px;
-            border-radius: 0.375rem 0.375rem 0 0;
-        }
         
         .CodeMirror {
             height: calc(100% - 50px) !important;
-            font-family: 'Calibri', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-            font-size: 11pt; /* Standard Word font size */
-            line-height: 1.15;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 15px;
+            line-height: 1.6;
             background: white;
         }
         
@@ -210,47 +253,9 @@
         }
         
         .CodeMirror-lines {
-            padding: 0.5in 0.5in 0.5in 0.5in !important; /* 0.5 inch margins on all sides */
+            padding: 32px 48px !important;
         }
         
-        /* MS Word-like styling */
-        .firepad .CodeMirror .CodeMirror-line {
-            line-height: 1.15; /* Single spacing like Word */
-            margin-bottom: 0;
-        }
-        
-        /* Firepad toolbar styling */
-        .firepad .firepad-toolbar {
-            background: #f8f9fa;
-            border-bottom: 1px solid #dee2e6;
-            padding: 8px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            flex-wrap: wrap;
-            position: relative;
-            z-index: 10;
-        }
-        
-        .firepad .firepad-toolbar button {
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 5px 8px;
-            cursor: pointer;
-            font-size: 12px;
-            margin: 2px;
-        }
-        
-        .firepad .firepad-toolbar button:hover {
-            background: #e9ecef;
-        }
-        
-        .firepad .firepad-toolbar button.active {
-            background: #007bff;
-            color: white;
-            border-color: #007bff;
-        }
         
          /* Print styles - simple and clean */
          @media print {
@@ -395,42 +400,73 @@
             overflow: hidden !important;
         }
         
-        /* Firepad rich text styling */
-        .firepad .CodeMirror {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
         
-        .firepad .CodeMirror .CodeMirror-line {
-            line-height: 1.6;
-        }
-        
-        /* Status badge styles */
+        /* Modern Badge Styles */
         .badge {
-            font-size: 0.75rem;
-            padding: 0.375rem 0.75rem;
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
         }
         
         .badge-success {
-            background-color: #28a745;
+            background: #d1fae5;
+            color: #065f46;
         }
         
         .badge-warning {
-            background-color: #ffc107;
-            color: #212529;
+            background: #fef3c7;
+            color: #92400e;
         }
         
         .badge-info {
-            background-color: #17a2b8;
+            background: #dbeafe;
+            color: #1e40af;
         }
         
+        /* Modern Button Styles */
         .btn {
-            border-radius: 6px;
+            border-radius: 8px;
             font-weight: 500;
+            transition: all 0.2s;
+            border: 1px solid transparent;
         }
         
         .btn-sm {
-            padding: 0.375rem 0.75rem;
-            font-size: 0.875rem;
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+        
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        
+        .btn-primary:hover {
+            background: #2563eb;
+            border-color: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
+        }
+        
+        .btn-success {
+            background: #10b981;
+            color: white;
+            border-color: #10b981;
+        }
+        
+        .btn-success:hover {
+            background: #059669;
+            border-color: #059669;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);
+        }
+        
+        .btn-block {
+            width: 100%;
+            display: block;
         }
     </style>
     

@@ -8,9 +8,9 @@ $this->assign('title', 'RBTkaWordPad - Collaborative Editor');
 <!-- Sidebar -->
 <div class="pad-sidebar" id="padSidebar">
     <div class="sidebar-header">
-        <h5><i class="fas fa-file-alt"></i> My Pads</h5>
+        <h5>My Documents</h5>
         <button class="btn btn-primary btn-sm btn-block" id="btn-new-pad">
-            <i class="fas fa-plus"></i> New Pad
+            <i class="fas fa-plus"></i> New Document
         </button>
     </div>
     <div class="pad-list" id="padList">
@@ -19,10 +19,10 @@ $this->assign('title', 'RBTkaWordPad - Collaborative Editor');
                 <span class="pad-item-name"><?= h($pad->name) ?></span>
                 <div class="pad-item-actions">
                     <button class="pad-item-action-btn rename" title="Rename">
-                        <i class="fas fa-edit"></i>
+                        <i class="fas fa-pen"></i>
                     </button>
                     <button class="pad-item-action-btn delete" title="Delete">
-                        <i class="fas fa-trash"></i>
+                        <i class="fas fa-trash-alt"></i>
                     </button>
                 </div>
             </div>
@@ -32,7 +32,7 @@ $this->assign('title', 'RBTkaWordPad - Collaborative Editor');
 
 <!-- Sidebar Toggle Button -->
 <div class="sidebar-toggle" id="sidebarToggle">
-    <i class="fas fa-chevron-left"></i>
+    <i class="fas fa-bars"></i>
 </div>
 
 <!-- Main Content Area -->
@@ -40,11 +40,11 @@ $this->assign('title', 'RBTkaWordPad - Collaborative Editor');
 <div class="pad-header">
     <div class="d-flex justify-content-between align-items-center">
         <h4 class="mb-0">
-                <i class="fas fa-edit text-primary"></i> <span id="current-pad-name"><?= h($currentPad->name) ?></span>
+            <i class="fas fa-file-alt"></i> <span id="current-pad-name"><?= h($currentPad->name) ?></span>
         </h4>
-        <div>
+        <div class="d-flex align-items-center" style="gap: 12px;">
             <span id="firepad-status" class="badge badge-info">Connecting...</span>
-            <button id="btn-print" class="btn btn-success btn-sm ml-2">
+            <button id="btn-print" class="btn btn-success btn-sm">
                 <i class="fas fa-print"></i> Print
             </button>
         </div>
@@ -54,8 +54,8 @@ $this->assign('title', 'RBTkaWordPad - Collaborative Editor');
 <div class="pad-content">
     <div class="document-wrapper">
         <div id="firepad-container"></div>
-        </div>
     </div>
+</div>
 </div>
 
 <!-- Firebase SDK v8 (compatible with Firepad) -->
@@ -209,12 +209,6 @@ $this->assign('title', 'RBTkaWordPad - Collaborative Editor');
         sidebarToggle.addEventListener('click', function() {
             sidebar.classList.toggle('collapsed');
             sidebarToggle.classList.toggle('collapsed');
-            const icon = sidebarToggle.querySelector('i');
-            if (sidebar.classList.contains('collapsed')) {
-                icon.className = 'fas fa-chevron-right';
-            } else {
-                icon.className = 'fas fa-chevron-left';
-            }
         });
         
         // New pad button
@@ -249,7 +243,7 @@ $this->assign('title', 'RBTkaWordPad - Collaborative Editor');
     
     // Create new pad
     function createNewPad() {
-        const name = prompt('Enter pad name:');
+        const name = prompt('Enter document name:');
         if (!name) return;
         
         fetch('/pad/create', {
@@ -312,7 +306,7 @@ $this->assign('title', 'RBTkaWordPad - Collaborative Editor');
     
     // Delete pad
     function deletePad(padId) {
-        if (!confirm('Are you sure you want to delete this pad? This action cannot be undone.')) {
+        if (!confirm('Are you sure you want to delete this document? This action cannot be undone.')) {
             return;
         }
         
