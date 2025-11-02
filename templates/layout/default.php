@@ -267,6 +267,7 @@ $appTitle = 'RBTkaFiles';
             runWhenIdle(function() {
                 initUserPresence();
                 initBroadcastTicker();
+                initRefreshSignalListener();
             });
         }
 
@@ -281,6 +282,18 @@ $appTitle = 'RBTkaFiles';
             const userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
             const myPresenceRef = presenceRef.child(userId);
             
+            // Store userId globally so it can be accessed by file manager
+            window.firebaseUserId = userId;
+            
+            // Function to update presence with current URL
+            function updatePresenceWithUrl() {
+                const currentUrl = window.location.pathname;
+                myPresenceRef.set({
+                    timestamp: firebase.database.ServerValue.TIMESTAMP,
+                    url: currentUrl
+                });
+            }
+            
             // Monitor connection state
             const connectedRef = firebase.database().ref('.info/connected');
             connectedRef.on('value', function(snapshot) {
@@ -288,19 +301,65 @@ $appTitle = 'RBTkaFiles';
                     // When I disconnect, remove this user
                     myPresenceRef.onDisconnect().remove();
                     
-                    // Add this user to presence list
-                    myPresenceRef.set({
-                        timestamp: firebase.database.ServerValue.TIMESTAMP
-                    });
+                    // Add this user to presence list with current URL
+                    updatePresenceWithUrl();
                 }
             });
+            
+            // Update presence when URL changes (for single-page navigation)
+            let lastUrl = window.location.pathname;
+            setInterval(function() {
+                const currentUrl = window.location.pathname;
+                if (currentUrl !== lastUrl) {
+                    lastUrl = currentUrl;
+                    updatePresenceWithUrl();
+                }
+            }, 1000);
             
             // Listen for changes in user count
             presenceRef.on('value', function(snapshot) {
                 const count = snapshot.numChildren();
                 userCountElement.textContent = count;
             });
+            
+            // Store reference globally for refresh signal functionality
+            window.firebasePresenceRef = presenceRef;
         }
+
+        // Initialize Refresh Signal Listener
+        function initRefreshSignalListener() {
+            const refreshSignalsRef = firebase.database().ref('refreshSignals');
+            
+            // Listen for new refresh signals
+            refreshSignalsRef.on('child_added', function(snapshot) {
+                const signal = snapshot.val();
+                const signalKey = snapshot.key;
+                
+                // Check if this signal is for the current URL
+                const currentUrl = window.location.pathname;
+                if (signal && signal.url === currentUrl) {
+                    // Check if this signal is not from current user (avoid refreshing our own changes)
+                    if (signal.userId !== window.firebaseUserId) {
+                        // Auto-refresh after a short delay
+                        setTimeout(function() {
+                            if (typeof window.fileManager !== 'undefined' && window.fileManager) {
+                                // If file manager exists, reload the current directory
+                                window.fileManager.loadDirectory(window.fileManager.currentPath);
+                            } else {
+                                // Otherwise, reload the page
+                                window.location.reload();
+                            }
+                        }, 500);
+                    }
+                    
+                    // Clean up old signal (optional, but prevents database bloat)
+                    setTimeout(function() {
+                        refreshSignalsRef.child(signalKey).remove();
+                    }, 5000);
+                }
+            });
+        }
+        
 
         // Broadcast Ticker Functionality
         function initBroadcastTicker() {

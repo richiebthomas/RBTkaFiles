@@ -221,6 +221,7 @@ class FileManager {
                 this.isProcessingMove = false;
                 if (response.success) {
                     this.showSuccess('Item moved successfully');
+                    this.sendRefreshSignal();
                     this.loadDirectory(this.currentPath);
                 } else {
                     this.showError(response.message || 'Failed to move item');
@@ -522,6 +523,7 @@ class FileManager {
                 if (response.success) {
                     $('#createFolderModal').modal('hide');
                     this.showSuccess('Folder created successfully');
+                    this.sendRefreshSignal();
                     this.loadDirectory(this.currentPath);
                 } else {
                     this.showModalError('#folder-name-error', response.message);
@@ -606,6 +608,7 @@ class FileManager {
             success: (response) => {
                 if (response.success) {
                     this.showSuccess('Files uploaded successfully');
+                    this.sendRefreshSignal();
                     this.loadDirectory(this.currentPath);
                 } else {
                     this.showError(response.message || 'Upload failed');
@@ -739,6 +742,7 @@ class FileManager {
                 if (response.success) {
                     $('#renameModal').modal('hide');
                     this.showSuccess('Item renamed successfully');
+                    this.sendRefreshSignal();
                     this.loadDirectory(this.currentPath);
                 } else {
                     this.showModalError('#rename-error', response.message);
@@ -770,6 +774,7 @@ class FileManager {
             success: (response) => {
                 if (response.success) {
                     this.showSuccess('Item deleted successfully');
+                    this.sendRefreshSignal();
                     this.loadDirectory(this.currentPath);
                 } else {
                     this.showError(response.message);
@@ -1413,6 +1418,7 @@ saveNote(data) {
             if (response.success) {
                 this.showNotes(response.notes);
                 this.showSuccess('Note saved successfully');
+                this.sendRefreshSignal();
             } else {
                 this.showError('Failed to save note: ' + response.message);
             }
@@ -1436,6 +1442,7 @@ deleteNote(noteId) {
             if (response.success) {
                 this.showNotes(response.notes);
                 this.showSuccess('Note deleted successfully');
+                this.sendRefreshSignal();
             } else {
                 this.showError('Failed to delete note: ' + response.message);
             }
@@ -1733,6 +1740,36 @@ scrollToNotesSection() {
 openPad() {
     // Open the pad page in a new tab
     window.open('/pad', '_blank');
+}
+
+sendRefreshSignal() {
+    // Check if Firebase is available
+    if (typeof firebase === 'undefined') {
+        // Retry after a short delay
+        setTimeout(() => this.sendRefreshSignal(), 500);
+        return;
+    }
+    
+    try {
+        // Initialize Firebase app if not already initialized
+        if (!firebase.apps || firebase.apps.length === 0) {
+            return;
+        }
+        
+        const currentUrl = window.location.pathname;
+        const userId = window.firebaseUserId || 'unknown';
+        const refreshSignalsRef = firebase.database().ref('refreshSignals');
+        
+        // Send refresh signal with current URL and user ID
+        refreshSignalsRef.push({
+            url: currentUrl,
+            userId: userId,
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+        });
+        
+    } catch (error) {
+        // Silent fail
+    }
 }
 }
 
