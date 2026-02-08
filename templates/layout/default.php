@@ -175,6 +175,90 @@ $appTitle = 'RBTkaFiles';
         }
     }
 
+/* /public/css/anniversary.css */
+
+/* Anniversary Badge */
+.anniversary-badge {
+    position: relative;
+    display: inline-block;
+}
+
+.anniversary-tag {
+    position: absolute;
+    top: -8px;
+    right: -40px;
+    background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+    color: #000;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+    font-family: 'Arial', sans-serif;
+    letter-spacing: 0.5px;
+    border: 1px solid #fff;
+}
+
+/* Anniversary Modal */
+.anniversary-modal {
+    display: none;
+    position: fixed;
+    z-index: 10000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+}
+
+.anniversary-modal-content {
+    position: relative;
+    margin: 5% auto;
+    max-width: 600px;
+    width: 90%;
+}
+
+.anniversary-modal-content img {
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.anniversary-modal-close {
+    position: absolute;
+    top: -15px;
+    right: -15px;
+    width: 40px;
+    height: 40px;
+    background: #fff;
+    border: none;
+    border-radius: 50%;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    color: #000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.anniversary-modal-close:hover {
+    background: #ff4b2b;
+    color: #fff;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .anniversary-tag {
+        right: -35px;
+        font-size: 9px;
+        padding: 2px 6px;
+    }
+
+    .anniversary-modal-content {
+        margin: 20% auto;
+    }
+}
+
     
     </style>
 
@@ -184,7 +268,10 @@ $appTitle = 'RBTkaFiles';
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm custom-navbar">
         <div class="container-fluid">
-            <a class="navbar-brand glitch-text" href="<?= $this->Url->build('/') ?>">📁 RBTkaFiles</a>
+            <a class="navbar-brand glitch-text anniversary-badge" href="<?= $this->Url->build('/') ?>">
+                📁 RBTkaFiles
+                <span class="anniversary-tag">1 YEAR! 🎉</span>
+            </a>
             
             <!-- Broadcast Ticker -->
             <div class="broadcast-ticker" id="broadcastTicker" title="Click to send a broadcast message"></div>
@@ -205,6 +292,14 @@ $appTitle = 'RBTkaFiles';
             </div>
         </div>
     </nav>
+
+    <!-- Anniversary Modal -->
+    <div id="anniversaryModal" class="anniversary-modal">
+        <div class="anniversary-modal-content">
+            <button class="anniversary-modal-close" onclick="closeAnniversaryModal()">&times;</button>
+            <img src="https://ddjakyvgivwkkqnfcjnj.supabase.co/storage/v1/object/public/rbtkafiles/1year.png" alt="1 Year Anniversary">
+        </div>
+    </div>
 
     <main class="main-content">
         <?= $this->Flash->render() ?>
@@ -454,6 +549,38 @@ $appTitle = 'RBTkaFiles';
             initializeFirebaseFeatures();
         }
     </script>
+<!-- /public/js/anniversary-modal.js -->
+
+<!-- Anniversary Modal Script -->
+<script>
+    // Show anniversary modal on page load
+    window.addEventListener('load', function () {
+        setTimeout(function () {
+            document.getElementById('anniversaryModal').style.display = 'block';
+        }, 500);
+    });
+
+    // Close modal function
+    function closeAnniversaryModal() {
+        document.getElementById('anniversaryModal').style.display = 'none';
+    }
+
+    // Close modal when clicking outside the image
+    document.addEventListener('click', function (event) {
+        const modal = document.getElementById('anniversaryModal');
+        if (event.target === modal) {
+            closeAnniversaryModal();
+        }
+    });
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            closeAnniversaryModal();
+        }
+    });
+</script>
+
     
     <!-- Firepad CSS -->
     <link rel="stylesheet" href="https://cdn.firepad.io/releases/v1.5.9/firepad.css" />
