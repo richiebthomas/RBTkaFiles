@@ -278,8 +278,26 @@ $appTitle = 'RBTkaFiles';
             
             if (!userCountElement) return;
             
-            // Generate a unique user ID for this session
-            const userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            // Reuse a single user ID per browser (so multiple tabs count as one user)
+            let userId = null;
+            try {
+                const storedId = window.localStorage.getItem('rbtka_presence_user_id');
+                if (storedId && typeof storedId === 'string') {
+                    userId = storedId;
+                }
+            } catch (e) {
+                // localStorage might be unavailable; ignore and fall back to per-session ID
+            }
+
+            if (!userId) {
+                userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                try {
+                    window.localStorage.setItem('rbtka_presence_user_id', userId);
+                } catch (e) {
+                    // Ignore storage errors; presence will still work per tab
+                }
+            }
+
             const myPresenceRef = presenceRef.child(userId);
             
             // Store userId globally so it can be accessed by file manager
