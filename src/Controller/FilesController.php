@@ -257,7 +257,10 @@ class FilesController extends AppController
 
         $uploadId = trim((string)($data['upload_id'] ?? ''));
         $chunkIndex = isset($data['chunk_index']) ? (int)$data['chunk_index'] : 0;
-        $isLast = isset($data['is_last']) && (string)$data['is_last'] === '1';
+        // Be flexible about how is_last is sent from the client
+        $isLastRaw = $data['is_last'] ?? '0';
+        $isLast = filter_var($isLastRaw, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        $isLast = $isLast === null ? ((string)$isLastRaw === '1') : $isLast;
         $originalName = trim((string)($data['original_name'] ?? ''));
         $parentPath = $this->sanitizePath((string)($data['parent_path'] ?? ''));
         $mimeType = trim((string)($data['mime_type'] ?? 'application/octet-stream'));
