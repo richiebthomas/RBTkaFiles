@@ -175,7 +175,46 @@ $appTitle = 'RBTkaFiles';
         }
     }
 
-    
+    /* Collaborative cursor styles */
+    .collab-cursor {
+        position: fixed;
+        pointer-events: none;
+        z-index: 9999;
+        transform: translate(-50%, -50%);
+        transition: transform 0.15s linear;
+    }
+
+    .collab-cursor-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        box-shadow: 0 0 8px rgba(0,0,0,0.3);
+        border: 2px solid rgba(255,255,255,0.8);
+    }
+
+    .collab-cursor-label {
+        position: absolute;
+        top: 14px;
+        left: 12px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 500;
+        color: #111827;
+        background: rgba(255,255,255,0.9);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+        white-space: nowrap;
+    }
+
+    .collab-cursor-label::before {
+        content: '';
+        position: absolute;
+        left: -4px;
+        top: 3px;
+        border-width: 4px;
+        border-style: solid;
+        border-color: transparent rgba(255,255,255,0.9) transparent transparent;
+    }
     </style>
 
     <?= $this->fetch('meta') ?>
@@ -268,6 +307,7 @@ $appTitle = 'RBTkaFiles';
                 initUserPresence();
                 initBroadcastTicker();
                 initRefreshSignalListener();
+                initCollaborativeCursors();
             });
         }
 
@@ -378,6 +418,136 @@ $appTitle = 'RBTkaFiles';
             });
         }
         
+        // Collaborative cursors (Canva-style)
+        function initCollaborativeCursors() {
+            if (typeof firebase === 'undefined') return;
+            const db = firebase.database();
+            const cursorsRef = db.ref('cursors');
+            const currentUrl = window.location.pathname;
+            const myUserId = window.firebaseUserId || ('user_' + Math.random().toString(36).substr(2, 9));
+
+            // Assign a stable color per user (simple hash to HSL)
+            function colorForUser(userId) {
+                let hash = 0;
+                for (let i = 0; i < userId.length; i++) {
+                    hash = ((hash << 5) - hash) + userId.charCodeAt(i);
+                    hash |= 0;
+                }
+                const hue = Math.abs(hash) % 360;
+                return 'hsl(' + hue + ', 80%, 55%)';
+            }
+
+            const myCursorRef = cursorsRef.child(myUserId);
+            myCursorRef.onDisconnect().remove();
+
+            // Track and throttle own cursor updates
+            let lastSent = 0;
+            const SEND_INTERVAL_MS = 120; // ~8 updates/sec
+
+            function handleMouseMove(e) {
+                const now = Date.now();
+                if (now - lastSent < SEND_INTERVAL_MS) return;
+                lastSent = now;
+                const payload = {
+                    x: e.clientX,
+                    y: e.clientY,
+                    url: currentUrl,
+                    ts: firebase.database.ServerValue.TIMESTAMP,
+                };
+                myCursorRef.set(payload);
+            }
+
+            window.addEventListener('mousemove', handleMouseMove);
+
+            // Remote cursors rendering
+            const remoteCursors = {}; // userId -> { el, targetX, targetY }
+
+            function ensureCursorElement(userId) {
+                if (remoteCursors[userId]) return remoteCursors[userId];
+                const el = document.createElement('div');
+                el.className = 'collab-cursor';
+
+                const dot = document.createElement('div');
+                dot.className = 'collab-cursor-dot';
+                dot.style.backgroundColor = colorForUser(userId);
+
+                const label = document.createElement('div');
+                label.className = 'collab-cursor-label';
+                label.style.borderColor = colorForUser(userId);
+                label.textContent = userId.replace(/^user_/, '');
+
+                el.appendChild(dot);
+                el.appendChild(label);
+
+                document.body.appendChild(el);
+                remoteCursors[userId] = {
+                    el,
+                    targetX: window.innerWidth / 2,
+                    targetY: window.innerHeight / 2,
+                };
+                return remoteCursors[userId];
+            }
+
+            function removeCursorElement(userId) {
+                const entry = remoteCursors[userId];
+                if (entry) {
+                    if (entry.el && entry.el.parentNode) {
+                        entry.el.parentNode.removeChild(entry.el);
+                    }
+                    delete remoteCursors[userId];
+                }
+            }
+
+            // Listen for cursor changes
+            cursorsRef.on('child_added', function(snapshot) {
+                const userId = snapshot.key;
+                if (userId === myUserId) return;
+                const data = snapshot.val();
+                if (!data || data.url !== currentUrl) return;
+                const cursor = ensureCursorElement(userId);
+                cursor.targetX = data.x;
+                cursor.targetY = data.y;
+            });
+
+            cursorsRef.on('child_changed', function(snapshot) {
+                const userId = snapshot.key;
+                if (userId === myUserId) return;
+                const data = snapshot.val();
+                if (!data || data.url !== currentUrl) {
+                    removeCursorElement(userId);
+                    return;
+                }
+                const cursor = ensureCursorElement(userId);
+                cursor.targetX = data.x;
+                cursor.targetY = data.y;
+            });
+
+            cursorsRef.on('child_removed', function(snapshot) {
+                const userId = snapshot.key;
+                if (userId === myUserId) return;
+                removeCursorElement(userId);
+            });
+
+            // Smoothly animate cursor movement based on target positions
+            function animateCursors() {
+                Object.keys(remoteCursors).forEach((userId) => {
+                    const cursor = remoteCursors[userId];
+                    const el = cursor.el;
+                    if (!el) return;
+                    const rect = el.getBoundingClientRect();
+                    const currentX = rect.left + rect.width / 2;
+                    const currentY = rect.top + rect.height / 2;
+                    const lerpFactor = 0.2;
+                    const nextX = currentX + (cursor.targetX - currentX) * lerpFactor;
+                    const nextY = currentY + (cursor.targetY - currentY) * lerpFactor;
+                    el.style.left = nextX + 'px';
+                    el.style.top = nextY + 'px';
+                });
+                requestAnimationFrame(animateCursors);
+            }
+
+            requestAnimationFrame(animateCursors);
+        }
 
         // Broadcast Ticker Functionality
         function initBroadcastTicker() {
