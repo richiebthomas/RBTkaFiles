@@ -193,6 +193,18 @@ $this->assign('title', 'RBTkaWordPad - Collaborative Editor');
             printDocument();
         });
         
+        // Intercept Ctrl+P / Cmd+P and route to our custom print
+        document.addEventListener('keydown', function(e) {
+            const isCtrlOrCmd = e.ctrlKey || e.metaKey;
+            const isPrintKey = e.key === 'p' || e.key === 'P';
+            
+            if (isCtrlOrCmd && isPrintKey) {
+                e.preventDefault();
+                e.stopPropagation();
+                printDocument();
+            }
+        });
+        
         // Add image paste functionality
         setupImagePaste();
         
