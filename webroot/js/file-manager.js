@@ -1270,16 +1270,23 @@ renderPreview(file) {
     const icon = this.getFileIcon(file.name, file.mime_type);
     
     // Determine the preview URL based on file type
-    let previewUrl;
-    if (this.isOfficeFile(file)) {
-        // Use Google Docs Viewer for Office files
-        const baseUrl = window.location.origin;
-        const apiUrl = baseUrl + '/api/preview/' + this.encodePath(file.path);
-        previewUrl = 'https://docs.google.com/gview?url=' + encodeURIComponent(apiUrl) + '&embedded=true';
-    } else {
-        // Use direct API preview for other files
-        previewUrl = '/api/preview/' + this.encodePath(file.path);
-    }
+        let previewUrl;
+        if (this.isOfficeFile(file)) {
+            const baseUrl = window.location.origin;
+            const apiUrl = baseUrl + '/api/preview/' + this.encodePath(file.path);
+            // For Supabase-backed files, prefer Office Online viewer.
+            if (file.is_supabase) {
+                previewUrl = 'https://view.officeapps.live.com/op/view.aspx?src=' +
+                    encodeURIComponent(apiUrl) + '&wdOrigin=BROWSELINK';
+            } else {
+                // For non-Supabase files, keep using Google Docs Viewer.
+                previewUrl = 'https://docs.google.com/gview?url=' +
+                    encodeURIComponent(apiUrl) + '&embedded=true';
+            }
+        } else {
+            // Use direct API preview for other files
+            previewUrl = '/api/preview/' + this.encodePath(file.path);
+        }
     
     $('.preview-icon').attr('class', icon + ' preview-icon');
     $('.preview-filename').html(`
@@ -1329,11 +1336,20 @@ loadPreviewContent(file) {
 showOfficePreview(file) {
     const baseUrl = window.location.origin;
     const apiUrl = baseUrl + '/api/preview/' + this.encodePath(file.path);
-    const googleDocsUrl = 'https://docs.google.com/gview?url=' + encodeURIComponent(apiUrl) + '&embedded=true';
+        // For Supabase-backed files, prefer Office Online viewer.
+        let viewerUrl;
+        if (file.is_supabase) {
+            viewerUrl = 'https://view.officeapps.live.com/op/view.aspx?src=' +
+                encodeURIComponent(apiUrl) + '&wdOrigin=BROWSELINK';
+        } else {
+            // For non-Supabase files, keep using Google Docs Viewer.
+            viewerUrl = 'https://docs.google.com/gview?url=' +
+                encodeURIComponent(apiUrl) + '&embedded=true';
+        }
     
     $('#preview-body').html(`
         <div class="office-preview">
-            <iframe src="${googleDocsUrl}" class="preview-iframe" frameborder="0"></iframe>
+            <iframe src="${viewerUrl}" class="preview-iframe" frameborder="0"></iframe>
         </div>
     `);
 }
