@@ -426,8 +426,16 @@ $appTitle = 'RBTkaFiles';
             if (typeof firebase === 'undefined') return;
             const db = firebase.database();
             const cursorsRef = db.ref('cursors');
-            const currentUrl = window.location.pathname;
             const myUserId = window.firebaseUserId || ('user_' + Math.random().toString(36).substr(2, 9));
+
+            function getCurrentCursorContext() {
+                try {
+                    if (window.fileManager && typeof window.fileManager.currentPath === 'string') {
+                        return 'files:' + (window.fileManager.currentPath || '');
+                    }
+                } catch (e) {}
+                return 'url:' + window.location.pathname;
+            }
 
             // Assign a stable color per user (simple hash to HSL)
             function colorForUser(userId) {
@@ -454,7 +462,8 @@ $appTitle = 'RBTkaFiles';
                 const payload = {
                     x: e.clientX,
                     y: e.clientY,
-                    url: currentUrl,
+                    url: window.location.pathname,
+                    context: getCurrentCursorContext(),
                     ts: firebase.database.ServerValue.TIMESTAMP,
                 };
                 myCursorRef.set(payload);
@@ -463,7 +472,7 @@ $appTitle = 'RBTkaFiles';
             window.addEventListener('mousemove', handleMouseMove);
 
             // Remote cursors rendering
-            const remoteCursors = {}; // userId -> { el, targetX, targetY }
+            const remoteCursors = {}; // userId -> { el, targetX, targetY, lastSeen }
 
             function ensureCursorElement(userId) {
                 if (remoteCursors[userId]) return remoteCursors[userId];
@@ -489,6 +498,7 @@ $appTitle = 'RBTkaFiles';
                     el,
                     targetX: window.innerWidth / 2,
                     targetY: window.innerHeight / 2,
+                    lastSeen: Date.now(),
                 };
                 return remoteCursors[userId];
             }
@@ -508,23 +518,30 @@ $appTitle = 'RBTkaFiles';
                 const userId = snapshot.key;
                 if (userId === myUserId) return;
                 const data = snapshot.val();
-                if (!data || data.url !== currentUrl) return;
-                const cursor = ensureCursorElement(userId);
-                cursor.targetX = data.x;
-                cursor.targetY = data.y;
-            });
-
-            cursorsRef.on('child_changed', function(snapshot) {
-                const userId = snapshot.key;
-                if (userId === myUserId) return;
-                const data = snapshot.val();
-                if (!data || data.url !== currentUrl) {
+                const currentContext = getCurrentCursorContext();
+                if (!data || data.context !== currentContext) {
                     removeCursorElement(userId);
                     return;
                 }
                 const cursor = ensureCursorElement(userId);
                 cursor.targetX = data.x;
                 cursor.targetY = data.y;
+                cursor.lastSeen = Date.now();
+            });
+
+            cursorsRef.on('child_changed', function(snapshot) {
+                const userId = snapshot.key;
+                if (userId === myUserId) return;
+                const data = snapshot.val();
+                const currentContext = getCurrentCursorContext();
+                if (!data || data.context !== currentContext) {
+                    removeCursorElement(userId);
+                    return;
+                }
+                const cursor = ensureCursorElement(userId);
+                cursor.targetX = data.x;
+                cursor.targetY = data.y;
+                cursor.lastSeen = Date.now();
             });
 
             cursorsRef.on('child_removed', function(snapshot) {
@@ -535,10 +552,18 @@ $appTitle = 'RBTkaFiles';
 
             // Smoothly animate cursor movement based on target positions
             function animateCursors() {
+                const now = Date.now();
                 Object.keys(remoteCursors).forEach((userId) => {
                     const cursor = remoteCursors[userId];
                     const el = cursor.el;
                     if (!el) return;
+                    // Hide stale cursors after a few seconds of inactivity
+                    if (!cursor.lastSeen || (now - cursor.lastSeen) > 5000) {
+                        el.style.opacity = '0';
+                        return;
+                    } else {
+                        el.style.opacity = '1';
+                    }
                     const rect = el.getBoundingClientRect();
                     const currentX = rect.left + rect.width / 2;
                     const currentY = rect.top + rect.height / 2;
