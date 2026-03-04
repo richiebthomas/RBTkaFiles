@@ -1073,29 +1073,8 @@ $this->assign('title', 'RBTkaWordPad - Collaborative Editor');
         
         // Small delay to ensure images are rendered
         setTimeout(() => {
-            // Get the full HTML from Firepad
-            let htmlContent = firepad.getHtml();
-            
-            // Process image markers in the HTML content
-            htmlContent = htmlContent.replace(/\[IMAGE:([^\]]+)\]/g, function(match, imageData) {
-                const parts = imageData.split(':');
-                if (parts.length >= 3) {
-                    const url = parts[0];
-                    const width = parts[1];
-                    const height = parts[2];
-                    
-                    // Clean up width/height values (remove any existing 'px')
-                    const cleanWidth = width.replace(/px$/, '');
-                    const cleanHeight = height.replace(/px$/, '');
-                    
-                    return `<img src="${url}" style="max-width: 100%; width: ${cleanWidth}px; height: ${cleanHeight}px; display: block; margin: 10px 0;" />`;
-                } else if (parts.length === 1) {
-                    // Incomplete image marker - just URL, add default dimensions
-                    const url = parts[0];
-                    return `<img src="${url}" style="max-width: 100%; width: 400px; height: 300px; display: block; margin: 10px 0;" />`;
-                }
-                return match; // Return original if can't parse
-            });
+            // Build print-ready HTML from editor content (preserves image resizing)
+            let htmlContent = getEditorContentForPrint();
             
             // Create a new window for printing
             const printWindow = window.open('', '_blank', 'width=800,height=600');
@@ -1118,8 +1097,6 @@ $this->assign('title', 'RBTkaWordPad - Collaborative Editor');
                             background: white;
                         }
                         img {
-                            max-width: 100%;
-                            height: auto;
                             display: block;
                             margin: 10px 0;
                         }
