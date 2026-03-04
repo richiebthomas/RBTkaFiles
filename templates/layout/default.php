@@ -186,39 +186,13 @@ $appTitle = 'RBTkaFiles';
 
     .collab-cursor-pointer {
         position: relative;
-        width: 14px;
-        height: 22px;
-    }
-
-    .collab-cursor-pointer-main {
-        width: 0;
-        height: 0;
-        border-left: 0 solid transparent;
-        border-right: 8px solid transparent;
-        border-bottom: 18px solid #ffffff;
+        width: 24px;
+        height: 36px;
+        background-image: url('/img/cursor-collab.svg');
+        background-repeat: no-repeat;
+        background-size: contain;
+        background-position: top left;
         filter: drop-shadow(0 0 3px rgba(0,0,0,0.5));
-    }
-
-    .collab-cursor-pointer-main::after {
-        content: '';
-        position: absolute;
-        left: 2px;
-        top: 3px;
-        width: 0;
-        height: 0;
-        border-right: 6px solid transparent;
-        border-bottom: 14px solid #e5e7eb;
-    }
-
-    .collab-cursor-pointer-shadow {
-        position: absolute;
-        left: 6px;
-        top: 12px;
-        width: 6px;
-        height: 6px;
-        background: rgba(0,0,0,0.3);
-        border-radius: 50%;
-        filter: blur(1px);
     }
 
     .collab-cursor-label {
@@ -498,16 +472,6 @@ $appTitle = 'RBTkaFiles';
 
                 const pointer = document.createElement('div');
                 pointer.className = 'collab-cursor-pointer';
-
-                const pointerMain = document.createElement('div');
-                pointerMain.className = 'collab-cursor-pointer-main';
-                pointerMain.style.borderBottomColor = colorForUser(userId);
-
-                const pointerShadow = document.createElement('div');
-                pointerShadow.className = 'collab-cursor-pointer-shadow';
-
-                pointer.appendChild(pointerMain);
-                pointer.appendChild(pointerShadow);
 
                 const label = document.createElement('div');
                 label.className = 'collab-cursor-label';
