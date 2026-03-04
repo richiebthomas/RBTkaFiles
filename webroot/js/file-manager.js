@@ -4,7 +4,7 @@ class FileManager {
         this.selectedItem = null;
         this.notesVisible = false;
         this.currentNotes = '';
-        this.MAX_CHUNK_SIZE = 9 * 1024 * 1024; // 9MB per request limit
+        this.MAX_CHUNK_SIZE = 9 * 1024 * 1024; // 9MB per request limit.
         this.hoverTimeout = null;
         this.hoverHideTimeout = null;
         this.isProcessingMove = false;
