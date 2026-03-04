@@ -658,8 +658,11 @@ class FileManager {
                 const xhr = new window.XMLHttpRequest();
                 xhr.upload.addEventListener("progress", (e) => {
                     if (e.lengthComputable) {
-                        const percentComplete = (e.loaded / e.total) * 100;
-                        this.updateUploadProgress(percentComplete, e.loaded, e.total);
+                        // Reserve last 10% for server-side processing.
+                        const uploadPortion = 0.9;
+                        const percentComplete = (e.loaded / e.total) * uploadPortion * 100;
+                        const loadedTotal = e.loaded;
+                        this.updateUploadProgress(percentComplete, loadedTotal, file.size);
                     }
                 }, false);
                 return xhr;
@@ -672,6 +675,8 @@ class FileManager {
                 } else {
                     this.showError(response.message || `Upload failed for "${file.name}"`);
                 }
+                // On success, jump to 100% to reflect completed server-side work.
+                this.updateUploadProgress(100, file.size, file.size);
                 if (typeof doneCallback === 'function') {
                     doneCallback();
                 }
@@ -697,6 +702,7 @@ class FileManager {
         const totalSize = file.size;
         const totalChunks = Math.ceil(totalSize / this.MAX_CHUNK_SIZE);
         let currentChunk = 0;
+        const uploadPortion = 0.9; // 90% of bar reserved for client->server upload
 
         this.showUploadProgress(totalSize);
 
@@ -716,11 +722,6 @@ class FileManager {
             formData.append('total_size', totalSize);
             formData.append('chunk', blob, file.name + '.part');
 
-            // Approximate progress based on completed chunks
-            const approxUploaded = end;
-            const percentComplete = (approxUploaded / totalSize) * 100;
-            this.updateUploadProgress(percentComplete, approxUploaded, totalSize);
-
             $.ajax({
                 url: '/api/upload-chunked',
                 method: 'POST',
@@ -728,6 +729,19 @@ class FileManager {
                 processData: false,
                 contentType: false,
                 dataType: 'json',
+                xhr: () => {
+                    const xhr = new window.XMLHttpRequest();
+                    xhr.upload.addEventListener("progress", (e) => {
+                        if (e.lengthComputable) {
+                            const baseUploaded = start;
+                            const chunkLoaded = e.loaded;
+                            const totalUploaded = Math.min(baseUploaded + chunkLoaded, totalSize);
+                            const percentComplete = (totalUploaded / totalSize) * uploadPortion * 100;
+                            this.updateUploadProgress(percentComplete, totalUploaded, totalSize);
+                        }
+                    }, false);
+                    return xhr;
+                },
                 success: (response) => {
                     if (!response || !response.success) {
                         this.showError((response && response.message) || `Chunk upload failed for "${file.name}"`);
@@ -738,6 +752,8 @@ class FileManager {
                     }
 
                     if (response.completed) {
+                        // Last chunk finished and server has combined & uploaded to Supabase.
+                        this.updateUploadProgress(100, totalSize, totalSize);
                         this.showSuccess(`File "${file.name}" uploaded successfully`);
                         this.sendRefreshSignal();
                         this.loadDirectory(this.currentPath);
