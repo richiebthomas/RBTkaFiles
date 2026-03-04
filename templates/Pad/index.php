@@ -728,11 +728,58 @@ $this->assign('title', 'RBTkaWordPad - Collaborative Editor');
         container.tabIndex = -1;
         container.setAttribute('data-line-number', lineNumber);
         container.setAttribute('data-image-url', imageUrl);
+
+        // Simple image tools toolbar (invert / remove color)
+        const tools = document.createElement('div');
+        tools.className = 'image-tools';
+        tools.style.position = 'absolute';
+        tools.style.right = '8px';
+        tools.style.bottom = '8px';
+        tools.style.display = 'none';
+        tools.style.background = 'rgba(0, 0, 0, 0.7)';
+        tools.style.color = '#fff';
+        tools.style.borderRadius = '4px';
+        tools.style.padding = '2px 4px';
+        tools.style.fontSize = '11px';
+        tools.style.gap = '4px';
+        tools.style.zIndex = '11';
+        tools.style.alignItems = 'center';
+
+        const invertBtn = document.createElement('button');
+        invertBtn.type = 'button';
+        invertBtn.textContent = 'Invert';
+        invertBtn.style.border = 'none';
+        invertBtn.style.background = 'transparent';
+        invertBtn.style.color = 'inherit';
+        invertBtn.style.cursor = 'pointer';
+        invertBtn.style.padding = '2px 4px';
+        invertBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            invertImageAtLine(lineNumber);
+        });
+
+        const removeColorBtn = document.createElement('button');
+        removeColorBtn.type = 'button';
+        removeColorBtn.textContent = 'Remove Color';
+        removeColorBtn.style.border = 'none';
+        removeColorBtn.style.background = 'transparent';
+        removeColorBtn.style.color = 'inherit';
+        removeColorBtn.style.cursor = 'pointer';
+        removeColorBtn.style.padding = '2px 4px';
+        removeColorBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            promptRemoveColorAtLine(lineNumber);
+        });
+
+        tools.appendChild(invertBtn);
+        tools.appendChild(removeColorBtn);
+        container._imageTools = tools;
         
         // Create resize handles (hidden by default)
         const handles = createResizeHandles(container, img, lineNumber, imageUrl);
         
         container.appendChild(img);
+        container.appendChild(tools);
         handles.forEach(handle => container.appendChild(handle));
         
         return container;
@@ -797,12 +844,18 @@ $this->assign('title', 'RBTkaWordPad - Collaborative Editor');
                 c.querySelectorAll('.resize-handle').forEach(h => h.style.display = 'none');
                 const img = c.querySelector('img');
                 img.style.border = '1px solid #ddd';
+                if (c._imageTools) {
+                    c._imageTools.style.display = 'none';
+                }
             }
         });
         
         // Select this image
         container.classList.add('selected');
         container.querySelectorAll('.resize-handle').forEach(h => h.style.display = 'block');
+        if (container._imageTools) {
+            container._imageTools.style.display = 'flex';
+        }
         
         // Add selection border
         const img = container.querySelector('img');
@@ -905,6 +958,175 @@ $this->assign('title', 'RBTkaWordPad - Collaborative Editor');
                 { line: lineNumber, ch: line.length }
             );
         }
+    }
+
+    // Helper: parse hex color (#rrggbb) into {r,g,b}
+    function parseHexColor(hex) {
+        if (!hex) return null;
+        hex = hex.trim();
+        if (hex[0] === '#') hex = hex.slice(1);
+        if (hex.length === 3) {
+            hex = hex.split('').map(c => c + c).join('');
+        }
+        if (hex.length !== 6) return null;
+        const num = parseInt(hex, 16);
+        if (isNaN(num)) return null;
+        return {
+            r: (num >> 16) & 255,
+            g: (num >> 8) & 255,
+            b: num & 255
+        };
+    }
+
+    // Generic helper: load image at a given line into a canvas, let a processor mutate pixels,
+    // then upload the processed image via the existing /pad/upload-image endpoint and persist the new URL.
+    function processImageAtLine(lineNumber, processor) {
+        if (!codeMirror) return;
+        const containers = Array.from(document.querySelectorAll('.resizable-image-container'));
+        const container = containers.find(c => parseInt(c.getAttribute('data-line-number')) === lineNumber);
+        if (!container) return;
+
+        const img = container.querySelector('img');
+        if (!img || !img.src) return;
+
+        const image = new Image();
+        image.crossOrigin = 'anonymous';
+        image.onload = function() {
+            const canvas = document.createElement('canvas');
+            const w = image.naturalWidth || image.width;
+            const h = image.naturalHeight || image.height;
+            if (!w || !h) return;
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(image, 0, 0);
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            processor(imageData);
+            ctx.putImageData(imageData, 0, 0);
+
+            // Upload processed image as a new file so the editor stores a normal URL, not base64 data.
+            canvas.toBlob(function(blob) {
+                if (!blob) return;
+                const formData = new FormData();
+                formData.append('image', blob, 'edited-image.png');
+
+                fetch('/pad/upload-image', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data || !data.success || !data.url) {
+                        alert('Failed to upload processed image.');
+                        return;
+                    }
+
+                    const newUrl = data.url;
+                    img.src = newUrl;
+                    container.setAttribute('data-image-url', newUrl);
+
+                    // Preserve current display size if set, otherwise use natural width
+                    const displayWidth = img.style.width && img.style.width.trim() ? img.style.width : (canvas.width + 'px');
+                    const displayHeight = img.style.height && img.style.height.trim() ? img.style.height : 'auto';
+
+                    updateImageSize(lineNumber, newUrl, displayWidth, displayHeight);
+                })
+                .catch(err => {
+                    console.error('Error uploading processed image:', err);
+                    alert('Failed to upload processed image.');
+                });
+            }, 'image/png');
+        };
+        image.src = img.src;
+    }
+
+    // Public helper: invert all colors of the image at a given line
+    function invertImageAtLine(lineNumber) {
+        processImageAtLine(lineNumber, function(imageData) {
+            const data = imageData.data;
+            for (let i = 0; i < data.length; i += 4) {
+                data[i] = 255 - data[i];       // R
+                data[i + 1] = 255 - data[i+1]; // G
+                data[i + 2] = 255 - data[i+2]; // B
+                // alpha remains unchanged
+            }
+        });
+    }
+
+    // Let the user click on the image to pick a color to remove
+    function promptRemoveColorAtLine(lineNumber) {
+        const containers = Array.from(document.querySelectorAll('.resizable-image-container'));
+        const container = containers.find(c => parseInt(c.getAttribute('data-line-number')) === lineNumber);
+        if (!container) return;
+
+        const img = container.querySelector('img');
+        if (!img || !img.src) return;
+
+        alert('Click on the image at the color you want to remove.');
+
+        // Capture-phase handler so we can intercept before the normal selectImage click
+        function pickHandler(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            img.removeEventListener('click', pickHandler, true);
+
+            const rect = img.getBoundingClientRect();
+            let relX = e.clientX - rect.left;
+            let relY = e.clientY - rect.top;
+            relX = Math.max(0, Math.min(rect.width - 1, relX));
+            relY = Math.max(0, Math.min(rect.height - 1, relY));
+
+            const image = new Image();
+            image.crossOrigin = 'anonymous';
+            image.onload = function() {
+                const w = image.naturalWidth || image.width;
+                const h = image.naturalHeight || image.height;
+                if (!w || !h) return;
+
+                const scaleX = w / rect.width;
+                const scaleY = h / rect.height;
+                const px = Math.floor(relX * scaleX);
+                const py = Math.floor(relY * scaleY);
+
+                const canvas = document.createElement('canvas');
+                canvas.width = w;
+                canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(image, 0, 0);
+                const imageData = ctx.getImageData(px, py, 1, 1);
+                const d = imageData.data;
+                const rgb = { r: d[0], g: d[1], b: d[2] };
+
+                // Fixed tolerance that works well in practice
+                const tolerance = 40;
+                removeColorAtLine(lineNumber, rgb, tolerance);
+            };
+            image.src = img.src;
+        }
+
+        img.addEventListener('click', pickHandler, true);
+    }
+
+    // Remove pixels near a given color at a given line
+    function removeColorAtLine(lineNumber, targetRgb, tolerance) {
+        processImageAtLine(lineNumber, function(imageData) {
+            const data = imageData.data;
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i+1];
+                const b = data[i+2];
+                const dr = r - targetRgb.r;
+                const dg = g - targetRgb.g;
+                const db = b - targetRgb.b;
+                const dist = Math.sqrt(dr*dr + dg*dg + db*db);
+                if (dist <= tolerance) {
+                    // Make pixel fully transparent
+                    data[i + 3] = 0;
+                }
+            }
+        });
     }
     
     // Setup keyboard handlers for selected image
@@ -1057,6 +1279,9 @@ $this->assign('title', 'RBTkaWordPad - Collaborative Editor');
             const img = container.querySelector('img');
             img.style.border = '1px solid #ddd';
             img.style.backgroundColor = '#f9f9f9';
+            if (container._imageTools) {
+                container._imageTools.style.display = 'none';
+            }
             
             // Remove keyboard handler
             if (container._imageKeyHandler) {
