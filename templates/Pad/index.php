@@ -1073,8 +1073,30 @@ $this->assign('title', 'RBTkaWordPad - Collaborative Editor');
         
         // Small delay to ensure images are rendered
         setTimeout(() => {
-            // Build print-ready HTML from editor content (preserves image resizing)
-            let htmlContent = getEditorContentForPrint();
+            // Get the full HTML from Firepad (preserves rich text formatting)
+            let htmlContent = firepad.getHtml();
+            
+            // Convert our custom image markers to real <img> tags,
+            // preserving the saved width/height from the editor.
+            htmlContent = htmlContent.replace(/\[IMAGE:([^\]]+)\]/g, function(match, imageData) {
+                const parts = imageData.split(':');
+                if (parts.length >= 3) {
+                    const url = parts[0];
+                    const width = parts[1];
+                    const height = parts[2];
+                    
+                    // Normalize width/height to px values
+                    const cleanWidth = (width || '').toString().replace(/px$/, '');
+                    const cleanHeight = (height || '').toString().replace(/px$/, '');
+                    
+                    return `<img src="${url}" style="display: block; margin: 10px 0; width: ${cleanWidth}px; height: ${cleanHeight}px;" />`;
+                } else if (parts.length === 1) {
+                    // Only URL present – fall back to a reasonable default size
+                    const url = parts[0];
+                    return `<img src="${url}" style="display: block; margin: 10px 0; max-width: 100%; height: auto;" />`;
+                }
+                return match;
+            });
             
             // Create a new window for printing
             const printWindow = window.open('', '_blank', 'width=800,height=600');
