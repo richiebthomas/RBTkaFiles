@@ -63,6 +63,7 @@ return function (RouteBuilder $routes): void {
             $routes->get('/browse/*', ['controller' => 'Files', 'action' => 'browse']);
             $routes->post('/create-folder', ['controller' => 'Files', 'action' => 'createFolder']);
             $routes->post('/upload', ['controller' => 'Files', 'action' => 'upload']);
+            $routes->post('/upload-chunked', ['controller' => 'Files', 'action' => 'uploadChunked']);
             $routes->post('/rename', ['controller' => 'Files', 'action' => 'rename']);
             $routes->post('/move', ['controller' => 'Files', 'action' => 'move']);
             $routes->post('/delete', ['controller' => 'Files', 'action' => 'delete']);
