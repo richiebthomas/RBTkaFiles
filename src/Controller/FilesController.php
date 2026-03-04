@@ -235,6 +235,243 @@ class FilesController extends AppController
     }
 
     /**
+     * Upload a large file in 9MB chunks to temporary storage, then combine and upload to Supabase.
+     *
+     * Intended for client-side chunked uploads when the web server has a low per-request size limit.
+     *
+     * Request fields:
+     * - upload_id: string (client-generated identifier, e.g. UUID)
+     * - chunk_index: integer (0-based)
+     * - is_last: "0" or "1"
+     * - original_name: string
+     * - parent_path: string (logical folder path)
+     * - mime_type: string
+     * - total_size: integer (full file size in bytes)
+     * - chunk: uploaded file blob (this specific chunk)
+     */
+    public function uploadChunked(): Response
+    {
+        $this->request->allowMethod(['post']);
+
+        $data = $this->request->getData();
+
+        $uploadId = trim((string)($data['upload_id'] ?? ''));
+        $chunkIndex = isset($data['chunk_index']) ? (int)$data['chunk_index'] : 0;
+        $isLast = isset($data['is_last']) && (string)$data['is_last'] === '1';
+        $originalName = trim((string)($data['original_name'] ?? ''));
+        $parentPath = $this->sanitizePath((string)($data['parent_path'] ?? ''));
+        $mimeType = trim((string)($data['mime_type'] ?? 'application/octet-stream'));
+        $totalSize = isset($data['total_size']) ? (int)$data['total_size'] : 0;
+
+        $uploadedFiles = $this->request->getUploadedFiles();
+        $chunkFile = $uploadedFiles['chunk'] ?? null;
+
+        if (empty($uploadId) || $chunkFile === null) {
+            return $this->jsonResponse([
+                'success' => false,
+                'message' => 'Missing upload_id or chunk file',
+            ]);
+        }
+
+        if (empty($originalName)) {
+            return $this->jsonResponse([
+                'success' => false,
+                'message' => 'original_name is required',
+            ]);
+        }
+
+        // Enforce per-chunk size limit (9MB)
+        $maxChunkSize = 9 * 1024 * 1024;
+        if ($chunkFile->getSize() > $maxChunkSize) {
+            return $this->jsonResponse([
+                'success' => false,
+                'message' => 'Chunk exceeds 9MB limit',
+            ]);
+        }
+
+        if ($this->isDangerousFile($originalName)) {
+            return $this->jsonResponse([
+                'success' => false,
+                'message' => 'File type not allowed for security reasons',
+            ]);
+        }
+
+        // Sanitize upload ID to avoid filesystem issues
+        $uploadId = preg_replace('/[^a-zA-Z0-9_-]/', '_', $uploadId);
+
+        // Directory to hold temporary chunk files
+        $tempDir = WWW_ROOT . 'chunk_uploads';
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+
+        // Save this chunk
+        $chunkFilename = sprintf('%s_%05d.part', $uploadId, $chunkIndex);
+        $chunkPath = $tempDir . DS . $chunkFilename;
+
+        if ($chunkFile->getError() !== UPLOAD_ERR_OK) {
+            return $this->jsonResponse([
+                'success' => false,
+                'message' => 'Chunk upload error',
+            ]);
+        }
+
+        $chunkFile->moveTo($chunkPath);
+
+        // If not the last chunk, acknowledge receipt
+        if (!$isLast) {
+            return $this->jsonResponse([
+                'success' => true,
+                'message' => 'Chunk received',
+                'completed' => false,
+            ]);
+        }
+
+        // Last chunk: combine all chunks into a single temp file
+        $combinedPath = $tempDir . DS . $uploadId . '_combined';
+
+        try {
+            $combinedHandle = fopen($combinedPath, 'wb');
+            if ($combinedHandle === false) {
+                throw new \RuntimeException('Failed to create combined file');
+            }
+
+            // Combine chunks from 0..chunkIndex (inclusive)
+            for ($i = 0; $i <= $chunkIndex; $i++) {
+                $partName = sprintf('%s_%05d.part', $uploadId, $i);
+                $partPath = $tempDir . DS . $partName;
+
+                if (!file_exists($partPath)) {
+                    throw new \RuntimeException('Missing chunk file: ' . $partName);
+                }
+
+                $partHandle = fopen($partPath, 'rb');
+                if ($partHandle === false) {
+                    throw new \RuntimeException('Failed to open chunk file: ' . $partName);
+                }
+
+                while (!feof($partHandle)) {
+                    $buffer = fread($partHandle, 1024 * 1024);
+                    if ($buffer === false) {
+                        fclose($partHandle);
+                        throw new \RuntimeException('Error reading chunk file: ' . $partName);
+                    }
+                    fwrite($combinedHandle, $buffer);
+                }
+
+                fclose($partHandle);
+            }
+
+            fclose($combinedHandle);
+
+            $combinedSize = filesize($combinedPath) ?: 0;
+            if ($totalSize > 0 && $combinedSize !== $totalSize) {
+                $this->log(sprintf(
+                    'Chunked upload size mismatch for %s: expected %d, got %d',
+                    $originalName,
+                    $totalSize,
+                    $combinedSize
+                ), 'warning');
+            }
+
+            // Clean up chunk parts
+            for ($i = 0; $i <= $chunkIndex; $i++) {
+                $partName = sprintf('%s_%05d.part', $uploadId, $i);
+                $partPath = $tempDir . DS . $partName;
+                if (file_exists($partPath)) {
+                    @unlink($partPath);
+                }
+            }
+
+            // Now treat the combined file as a large upload to Supabase
+            $safeName = $this->sanitizeFileName($originalName);
+            $filePath = $parentPath ? $parentPath . '/' . $safeName : $safeName;
+
+            // Ensure unique logical path
+            $counter = 1;
+            $baseName = pathinfo($safeName, PATHINFO_FILENAME);
+            $extension = pathinfo($safeName, PATHINFO_EXTENSION);
+            while ($this->FileItems->pathExists($filePath)) {
+                $newName = $baseName . '_' . $counter . ($extension ? '.' . $extension : '');
+                $filePath = $parentPath ? $parentPath . '/' . $newName : $newName;
+                $counter++;
+            }
+
+            $fileSize = $combinedSize;
+            $supabaseService = new \App\Service\SupabaseStorageService();
+
+            // Generate unique filename for Supabase
+            $supabaseFilename = Text::uuid() . ($extension ? '.' . $extension : '');
+            $supabasePath = $parentPath ? $parentPath . '/' . $supabaseFilename : $supabaseFilename;
+
+            $uploadResult = $supabaseService->uploadFile(
+                $combinedPath,
+                $supabasePath,
+                [
+                    'contentType' => $mimeType,
+                    'upsert' => false,
+                ]
+            );
+
+            if (!($uploadResult['success'] ?? false)) {
+                throw new \RuntimeException('Failed to upload to Supabase: ' . ($uploadResult['error'] ?? 'unknown'));
+            }
+
+            // Create FileItem record
+            $fileItem = $this->FileItems->newEntity([
+                'name' => basename($filePath),
+                'type' => 'file',
+                'path' => $filePath,
+                'parent_path' => $parentPath,
+                'mime_type' => $mimeType,
+                'size' => $fileSize,
+                'filename_on_disk' => null,
+                'supabase_path' => $supabasePath,
+                'storage_type' => 'supabase',
+            ]);
+
+            if ($this->FileItems->save($fileItem)) {
+                @unlink($combinedPath);
+
+                return $this->jsonResponse([
+                    'success' => true,
+                    'completed' => true,
+                    'message' => 'File uploaded successfully',
+                    'item' => $fileItem,
+                ]);
+            }
+
+            // Database save failed: best-effort cleanup in Supabase
+            $supabaseService->deleteFile($supabasePath);
+            @unlink($combinedPath);
+
+            return $this->jsonResponse([
+                'success' => false,
+                'completed' => true,
+                'message' => 'Failed to save file info',
+            ]);
+        } catch (\Exception $e) {
+            $this->log('Error in uploadChunked: ' . $e->getMessage(), 'error');
+
+            if (file_exists($combinedPath)) {
+                @unlink($combinedPath);
+            }
+            for ($i = 0; $i <= $chunkIndex; $i++) {
+                $partName = sprintf('%s_%05d.part', $uploadId, $i);
+                $partPath = $tempDir . DS . $partName;
+                if (file_exists($partPath)) {
+                    @unlink($partPath);
+                }
+            }
+
+            return $this->jsonResponse([
+                'success' => false,
+                'message' => 'Failed to complete chunked upload: ' . $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
      * Upload files
      */
     public function upload(): Response

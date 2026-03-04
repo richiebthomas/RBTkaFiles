@@ -4,6 +4,7 @@ class FileManager {
         this.selectedItem = null;
         this.notesVisible = false;
         this.currentNotes = '';
+        this.MAX_CHUNK_SIZE = 9 * 1024 * 1024; // 9MB per request limit
         this.hoverTimeout = null;
         this.hoverHideTimeout = null;
         this.isProcessingMove = false;
@@ -563,15 +564,13 @@ class FileManager {
         const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
         const accepted = [];
         const rejected = [];
-        let totalSize = 0;
-        
+
         for (let i = 0; i < files.length; i++) {
             const f = files[i];
             if (f.size > MAX_FILE_SIZE) {
                 rejected.push(`${f.name} (${this.formatSize(f.size)})`);
             } else {
                 accepted.push(f);
-                totalSize += f.size;
             }
         }
 
@@ -582,12 +581,35 @@ class FileManager {
             return;
         }
 
-        let formData = new FormData();
+        // Upload each file individually so that large files can be chunked
+        const uploadNext = (index) => {
+            if (index >= accepted.length) {
+                $('#upload-progress').fadeOut();
+                return;
+            }
+
+            const file = accepted[index];
+            if (file.size > this.MAX_CHUNK_SIZE) {
+                this.uploadLargeFileInChunks(file, () => {
+                    uploadNext(index + 1);
+                });
+            } else {
+                this.uploadSingleFile(file, () => {
+                    uploadNext(index + 1);
+                });
+            }
+        };
+
+        uploadNext(0);
+    }
+
+    uploadSingleFile(file, doneCallback) {
+        const formData = new FormData();
         formData.append('parent_path', this.currentPath);
-        for (let i = 0; i < accepted.length; i++) {
-            formData.append('files[]', accepted[i]);
-        }
-        this.showUploadProgress(totalSize);
+        formData.append('files[]', file);
+
+        this.showUploadProgress(file.size);
+
         $.ajax({
             url: '/api/upload',
             method: 'POST',
@@ -607,19 +629,106 @@ class FileManager {
             },
             success: (response) => {
                 if (response.success) {
-                    this.showSuccess('Files uploaded successfully');
+                    this.showSuccess(`File "${file.name}" uploaded successfully`);
                     this.sendRefreshSignal();
                     this.loadDirectory(this.currentPath);
                 } else {
-                    this.showError(response.message || 'Upload failed');
+                    this.showError(response.message || `Upload failed for "${file.name}"`);
                 }
-                $('#upload-progress').fadeOut();
+                if (typeof doneCallback === 'function') {
+                    doneCallback();
+                }
             },
             error: (xhr) => {
                 this.showError('Upload failed: ' + xhr.statusText);
-                $('#upload-progress').fadeOut();
+                if (typeof doneCallback === 'function') {
+                    doneCallback();
+                }
             }
         });
+    }
+
+    generateUploadId() {
+        if (window.crypto && window.crypto.randomUUID) {
+            return window.crypto.randomUUID();
+        }
+        return 'upload_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+    }
+
+    uploadLargeFileInChunks(file, doneCallback) {
+        const uploadId = this.generateUploadId();
+        const totalSize = file.size;
+        const totalChunks = Math.ceil(totalSize / this.MAX_CHUNK_SIZE);
+        let currentChunk = 0;
+
+        this.showUploadProgress(totalSize);
+
+        const uploadChunk = () => {
+            const start = currentChunk * this.MAX_CHUNK_SIZE;
+            const end = Math.min(start + this.MAX_CHUNK_SIZE, totalSize);
+            const blob = file.slice(start, end);
+            const isLast = end >= totalSize;
+
+            const formData = new FormData();
+            formData.append('upload_id', uploadId);
+            formData.append('chunk_index', currentChunk);
+            formData.append('is_last', isLast ? '1' : '0');
+            formData.append('original_name', file.name);
+            formData.append('parent_path', this.currentPath);
+            formData.append('mime_type', file.type || 'application/octet-stream');
+            formData.append('total_size', totalSize);
+            formData.append('chunk', blob, file.name + '.part');
+
+            // Approximate progress based on completed chunks
+            const approxUploaded = end;
+            const percentComplete = (approxUploaded / totalSize) * 100;
+            this.updateUploadProgress(percentComplete, approxUploaded, totalSize);
+
+            $.ajax({
+                url: '/api/upload-chunked',
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                dataType: 'json',
+                success: (response) => {
+                    if (!response || !response.success) {
+                        this.showError((response && response.message) || `Chunk upload failed for "${file.name}"`);
+                        if (typeof doneCallback === 'function') {
+                            doneCallback();
+                        }
+                        return;
+                    }
+
+                    if (response.completed) {
+                        this.showSuccess(`File "${file.name}" uploaded successfully`);
+                        this.sendRefreshSignal();
+                        this.loadDirectory(this.currentPath);
+                        if (typeof doneCallback === 'function') {
+                            doneCallback();
+                        }
+                    } else {
+                        currentChunk++;
+                        if (currentChunk < totalChunks) {
+                            uploadChunk();
+                        } else {
+                            // Safety: should not happen without completed flag, but finish anyway
+                            if (typeof doneCallback === 'function') {
+                                doneCallback();
+                            }
+                        }
+                    }
+                },
+                error: (xhr) => {
+                    this.showError('Chunk upload failed: ' + xhr.statusText);
+                    if (typeof doneCallback === 'function') {
+                        doneCallback();
+                    }
+                }
+            });
+        };
+
+        uploadChunk();
     }
 
     showContextMenu(e) {
