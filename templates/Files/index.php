@@ -71,6 +71,7 @@ $this->assign('title', 'RBTkaFiles');
                         <tr>
                             <th class="file-name-header">Name</th>
                             <th class="file-size-header text-end">Size</th>
+                            <th class="file-date-header text-end">Modified</th>
                         </tr>
                     </thead>
                     <tbody id="file-table-body">
@@ -756,11 +757,16 @@ body {
 }
 
 .file-name-header {
-    width: 80%;
+  width: 60%;
 }
 
 .file-size-header {
-    width: 20%;
+  width: 20%;
+}
+
+.file-date-header {
+  width: 20%;
+  white-space: nowrap;
 }
 
 /* File Row Items */

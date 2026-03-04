@@ -319,6 +319,8 @@ class FileManager {
         const icon = isFolder ? 'fas fa-folder' : this.getFileIcon(item.name, item.mime_type);
         const sizeText = isFolder ? '-' : this.formatSize(item.size || 0);
         const typeText = isFolder ? 'Folder' : this.getFileType(item.name);
+        const modifiedRaw = item.modified || item.created || null;
+        const modifiedText = modifiedRaw ? this.formatDateTime(modifiedRaw) : '-';
         const element = $(`
             <tr class="file-item ${item.type}" 
                 data-path="${item.path}" 
@@ -332,14 +334,32 @@ class FileManager {
                         <span class="file-name" title="${item.name}">${item.name}</span>
                     </div>
                 </td>
-                
                 <td class="file-size-cell text-end">${sizeText}</td>
+                <td class="file-date-cell text-end">${modifiedText}</td>
             </tr>
         `);
         if (isFolder) {
             element.addClass('drop-target');
         }
         return element;
+    }
+
+    formatDateTime(value) {
+        try {
+            // value might be an ISO string or an object; coerce to Date
+            const d = (value instanceof Date) ? value : new Date(value);
+            if (isNaN(d.getTime())) {
+                return '-';
+            }
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = d.getFullYear();
+            const hours = String(d.getHours()).padStart(2, '0');
+            const minutes = String(d.getMinutes()).padStart(2, '0');
+            return `${day}/${month}/${year} ${hours}:${minutes}`;
+        } catch (e) {
+            return '-';
+        }
     }
 
     getFileIcon(filename, mimeType) {
