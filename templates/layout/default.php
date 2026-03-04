@@ -184,12 +184,41 @@ $appTitle = 'RBTkaFiles';
         transition: transform 0.15s linear;
     }
 
-    .collab-cursor-dot {
-        width: 10px;
-        height: 10px;
+    .collab-cursor-pointer {
+        position: relative;
+        width: 14px;
+        height: 22px;
+    }
+
+    .collab-cursor-pointer-main {
+        width: 0;
+        height: 0;
+        border-left: 0 solid transparent;
+        border-right: 8px solid transparent;
+        border-bottom: 18px solid #ffffff;
+        filter: drop-shadow(0 0 3px rgba(0,0,0,0.5));
+    }
+
+    .collab-cursor-pointer-main::after {
+        content: '';
+        position: absolute;
+        left: 2px;
+        top: 3px;
+        width: 0;
+        height: 0;
+        border-right: 6px solid transparent;
+        border-bottom: 14px solid #e5e7eb;
+    }
+
+    .collab-cursor-pointer-shadow {
+        position: absolute;
+        left: 6px;
+        top: 12px;
+        width: 6px;
+        height: 6px;
+        background: rgba(0,0,0,0.3);
         border-radius: 50%;
-        box-shadow: 0 0 8px rgba(0,0,0,0.3);
-        border: 2px solid rgba(255,255,255,0.8);
+        filter: blur(1px);
     }
 
     .collab-cursor-label {
@@ -467,16 +496,28 @@ $appTitle = 'RBTkaFiles';
                 const el = document.createElement('div');
                 el.className = 'collab-cursor';
 
-                const dot = document.createElement('div');
-                dot.className = 'collab-cursor-dot';
-                dot.style.backgroundColor = colorForUser(userId);
+                const pointer = document.createElement('div');
+                pointer.className = 'collab-cursor-pointer';
+
+                const pointerMain = document.createElement('div');
+                pointerMain.className = 'collab-cursor-pointer-main';
+                pointerMain.style.borderBottomColor = colorForUser(userId);
+
+                const pointerShadow = document.createElement('div');
+                pointerShadow.className = 'collab-cursor-pointer-shadow';
+
+                pointer.appendChild(pointerMain);
+                pointer.appendChild(pointerShadow);
 
                 const label = document.createElement('div');
                 label.className = 'collab-cursor-label';
                 label.style.borderColor = colorForUser(userId);
-                label.textContent = userId.replace(/^user_/, '');
+                // Extract last 5 digits from numeric portion of userId, e.g. user_1772620058639_xsrvubin0 -> 58639
+                const digitMatch = (userId.match(/(\d+)/g) || []).join('');
+                const shortId = digitMatch ? digitMatch.slice(-5) : userId.replace(/^user_/, '').slice(-5);
+                label.textContent = shortId;
 
-                el.appendChild(dot);
+                el.appendChild(pointer);
                 el.appendChild(label);
 
                 document.body.appendChild(el);
