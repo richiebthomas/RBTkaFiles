@@ -459,9 +459,12 @@ $appTitle = 'RBTkaFiles';
                 const now = Date.now();
                 if (now - lastSent < SEND_INTERVAL_MS) return;
                 lastSent = now;
+                const docX = window.pageXOffset + e.clientX;
+                const docY = window.pageYOffset + e.clientY;
                 const payload = {
-                    x: e.clientX,
-                    y: e.clientY,
+                    // Store document-based coordinates so footers line up for users
+                    x: docX,
+                    y: docY,
                     url: window.location.pathname,
                     context: getCurrentCursorContext(),
                     ts: firebase.database.ServerValue.TIMESTAMP,
@@ -472,7 +475,7 @@ $appTitle = 'RBTkaFiles';
             window.addEventListener('mousemove', handleMouseMove);
 
             // Remote cursors rendering
-            const remoteCursors = {}; // userId -> { el, targetX, targetY, lastSeen }
+            const remoteCursors = {}; // userId -> { el, targetDocX, targetDocY, lastSeen }
 
             function ensureCursorElement(userId) {
                 if (remoteCursors[userId]) return remoteCursors[userId];
@@ -496,8 +499,8 @@ $appTitle = 'RBTkaFiles';
                 document.body.appendChild(el);
                 remoteCursors[userId] = {
                     el,
-                    targetX: window.innerWidth / 2,
-                    targetY: window.innerHeight / 2,
+                    targetDocX: window.pageXOffset + window.innerWidth / 2,
+                    targetDocY: window.pageYOffset + window.innerHeight / 2,
                     lastSeen: Date.now(),
                 };
                 return remoteCursors[userId];
@@ -524,8 +527,8 @@ $appTitle = 'RBTkaFiles';
                     return;
                 }
                 const cursor = ensureCursorElement(userId);
-                cursor.targetX = data.x;
-                cursor.targetY = data.y;
+                cursor.targetDocX = data.x;
+                cursor.targetDocY = data.y;
                 cursor.lastSeen = Date.now();
             });
 
@@ -539,8 +542,8 @@ $appTitle = 'RBTkaFiles';
                     return;
                 }
                 const cursor = ensureCursorElement(userId);
-                cursor.targetX = data.x;
-                cursor.targetY = data.y;
+                cursor.targetDocX = data.x;
+                cursor.targetDocY = data.y;
                 cursor.lastSeen = Date.now();
             });
 
@@ -567,9 +570,28 @@ $appTitle = 'RBTkaFiles';
                     const rect = el.getBoundingClientRect();
                     const currentX = rect.left + rect.width / 2;
                     const currentY = rect.top + rect.height / 2;
+
+                    // Map document coordinates into this viewer's current viewport
+                    const desiredX = cursor.targetDocX - window.pageXOffset;
+                    const desiredY = cursor.targetDocY - window.pageYOffset;
+
+                    // If remote cursor is off-screen for this viewer, fade it out
+                    const offscreenMargin = 20;
+                    if (
+                        desiredY < -offscreenMargin ||
+                        desiredY > window.innerHeight + offscreenMargin ||
+                        desiredX < -offscreenMargin ||
+                        desiredX > window.innerWidth + offscreenMargin
+                    ) {
+                        el.style.opacity = '0';
+                        return;
+                    } else {
+                        el.style.opacity = '1';
+                    }
+
                     const lerpFactor = 0.2;
-                    const nextX = currentX + (cursor.targetX - currentX) * lerpFactor;
-                    const nextY = currentY + (cursor.targetY - currentY) * lerpFactor;
+                    const nextX = currentX + (desiredX - currentX) * lerpFactor;
+                    const nextY = currentY + (desiredY - currentY) * lerpFactor;
                     el.style.left = nextX + 'px';
                     el.style.top = nextY + 'px';
                 });
