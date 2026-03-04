@@ -114,10 +114,28 @@ class FilesController extends AppController
                 $this->log('Item: ' . $item->name . ' (path: ' . $item->path . ', parent: ' . $item->parent_path . ')', 'debug');
             }
 
+            // Normalize items to plain arrays, including created/modified timestamps
+            $itemsData = array_map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'name' => $item->name,
+                    'type' => $item->type,
+                    'path' => $item->path,
+                    'parent_path' => $item->parent_path,
+                    'mime_type' => $item->mime_type,
+                    'size' => $item->size,
+                    'filename_on_disk' => $item->filename_on_disk,
+                    'supabase_path' => $item->supabase_path,
+                    'storage_type' => $item->storage_type,
+                    'created' => $item->created ? $item->created->format(DATE_ATOM) : null,
+                    'modified' => $item->modified ? $item->modified->format(DATE_ATOM) : null,
+                ];
+            }, $items);
+
             $response = [
                 'success' => true,
                 'path' => $path,
-                'items' => $items,
+                'items' => $itemsData,
                 'breadcrumbs' => $breadcrumbs,
                 'notes' => $notes,
                 'debug' => [
