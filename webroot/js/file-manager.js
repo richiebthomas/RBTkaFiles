@@ -302,6 +302,7 @@ class FileManager {
                 data-path="${item.path}" 
                 data-type="${item.type}"
                 data-name="${item.name}"
+                data-storage-type="${item.storage_type || ''}"
                 draggable="true">
                 <td class="file-name-cell">
                     <div class="d-flex align-items-center">
@@ -436,20 +437,29 @@ class FileManager {
         const $item = $(e.currentTarget);
         $('.file-item').removeClass('selected');
         $item.addClass('selected');
+        const storageType = $item.data('storage-type') || '';
         this.selectedItem = {
             path: $item.data('path'),
             type: $item.data('type'),
-            name: $item.find('.file-name').text()
+            name: $item.find('.file-name').text(),
+            storage_type: storageType
         };
 
         if (this.selectedItem.type === 'file') {
             // Determine the preview URL based on file type
             let previewUrl;
             if (this.isOfficeFile(this.selectedItem)) {
-                // Use Google Docs Viewer for Office files
                 const baseUrl = window.location.origin;
                 const apiUrl = baseUrl + '/api/preview/' + this.encodePath(this.selectedItem.path);
-                previewUrl = 'https://docs.google.com/gview?url=' + encodeURIComponent(apiUrl) + '&embedded=true';
+                if (this.selectedItem.storage_type === 'supabase') {
+                    // Supabase-backed Office files: use Office Online viewer
+                    previewUrl = 'https://view.officeapps.live.com/op/view.aspx?src=' +
+                        encodeURIComponent(apiUrl) + '&wdOrigin=BROWSELINK';
+                } else {
+                    // Local/other Office files: keep using Google Docs Viewer
+                    previewUrl = 'https://docs.google.com/gview?url=' +
+                        encodeURIComponent(apiUrl) + '&embedded=true';
+                }
             } else {
                 // Use direct API preview for other files
                 previewUrl = '/api/preview/' + this.encodePath(this.selectedItem.path);
@@ -468,6 +478,7 @@ class FileManager {
         const $item = $(e.currentTarget);
         const type = $item.data('type');
         const path = $item.data('path');
+        const storageType = $item.data('storage-type') || '';
 
         if (type === 'folder') {
             this.loadDirectory(path);
@@ -477,14 +488,22 @@ class FileManager {
             const fileItem = {
                 path: path,
                 type: type,
-                name: $item.find('.file-name').text()
+                name: $item.find('.file-name').text(),
+                storage_type: storageType
             };
 
             if (this.isOfficeFile(fileItem)) {
-                // Use Google Docs Viewer for Office files
                 const baseUrl = window.location.origin;
                 const apiUrl = baseUrl + '/api/preview/' + this.encodePath(path);
-                previewUrl = 'https://docs.google.com/gview?url=' + encodeURIComponent(apiUrl) + '&embedded=true';
+                if (fileItem.storage_type === 'supabase') {
+                    // Supabase-backed Office files: use Office Online viewer
+                    previewUrl = 'https://view.officeapps.live.com/op/view.aspx?src=' +
+                        encodeURIComponent(apiUrl) + '&wdOrigin=BROWSELINK';
+                } else {
+                    // Local/other Office files: keep using Google Docs Viewer
+                    previewUrl = 'https://docs.google.com/gview?url=' +
+                        encodeURIComponent(apiUrl) + '&embedded=true';
+                }
             } else {
                 // Use direct API preview for other files
                 previewUrl = '/api/preview/' + this.encodePath(path);
