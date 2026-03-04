@@ -908,6 +908,7 @@ class FilesController extends AppController
                     'name' => $item->name,
                     'path' => $item->path,
                     'is_supabase' => $item->isSupabaseStored(),
+                    'public_url' => $item->getPublicUrl(),
                     'size' => $item->size ?: 0,
                     'human_size' => $item->getHumanSize(),
                     'mime_type' => $item->mime_type ?: 'application/octet-stream',

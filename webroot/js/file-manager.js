@@ -13,6 +13,28 @@ class FileManager {
         this.init();
     }
 
+    openSupabaseOfficeFile(path) {
+        $.ajax({
+            url: '/api/file-info',
+            method: 'GET',
+            data: { path: path },
+            dataType: 'json',
+            success: (response) => {
+                if (!response || !response.success || !response.file || !response.file.public_url) {
+                    this.showError('Unable to load Supabase file URL for preview.');
+                    return;
+                }
+                const supabaseUrl = response.file.public_url;
+                const viewerUrl = 'https://view.officeapps.live.com/op/view.aspx?src=' +
+                    encodeURIComponent(supabaseUrl) + '&wdOrigin=BROWSELINK';
+                window.open(viewerUrl, '_blank');
+            },
+            error: (xhr) => {
+                this.showError('Failed to fetch Supabase file info: ' + xhr.statusText);
+            }
+        });
+    }
+
     encodePath(path) {
         if (!path) return '';
         return path.split('/').map(segment => encodeURIComponent(segment)).join('/');
@@ -446,25 +468,23 @@ class FileManager {
         };
 
         if (this.selectedItem.type === 'file') {
-            // Determine the preview URL based on file type
-            let previewUrl;
-            if (this.isOfficeFile(this.selectedItem)) {
-                const baseUrl = window.location.origin;
-                const apiUrl = baseUrl + '/api/preview/' + this.encodePath(this.selectedItem.path);
-                if (this.selectedItem.storage_type === 'supabase') {
-                    // Supabase-backed Office files: use Office Online viewer
-                    previewUrl = 'https://view.officeapps.live.com/op/view.aspx?src=' +
-                        encodeURIComponent(apiUrl) + '&wdOrigin=BROWSELINK';
-                } else {
-                    // Local/other Office files: keep using Google Docs Viewer
+            if (this.isOfficeFile(this.selectedItem) && this.selectedItem.storage_type === 'supabase') {
+                // For Supabase-backed Office files, fetch the public URL then open via Office Online.
+                this.openSupabaseOfficeFile(this.selectedItem.path);
+            } else {
+                // Determine the preview URL based on file type
+                let previewUrl;
+                if (this.isOfficeFile(this.selectedItem)) {
+                    const baseUrl = window.location.origin;
+                    const apiUrl = baseUrl + '/api/preview/' + this.encodePath(this.selectedItem.path);
                     previewUrl = 'https://docs.google.com/gview?url=' +
                         encodeURIComponent(apiUrl) + '&embedded=true';
+                } else {
+                    // Use direct API preview for other files
+                    previewUrl = '/api/preview/' + this.encodePath(this.selectedItem.path);
                 }
-            } else {
-                // Use direct API preview for other files
-                previewUrl = '/api/preview/' + this.encodePath(this.selectedItem.path);
+                window.open(previewUrl, '_blank');
             }
-            window.open(previewUrl, '_blank');
         } else if (this.selectedItem.type === 'folder') {
             this.loadDirectory(this.selectedItem.path);
             this.closePreview();
@@ -483,8 +503,6 @@ class FileManager {
         if (type === 'folder') {
             this.loadDirectory(path);
         } else {
-            // Determine the preview URL based on file type
-            let previewUrl;
             const fileItem = {
                 path: path,
                 type: type,
@@ -492,23 +510,23 @@ class FileManager {
                 storage_type: storageType
             };
 
-            if (this.isOfficeFile(fileItem)) {
-                const baseUrl = window.location.origin;
-                const apiUrl = baseUrl + '/api/preview/' + this.encodePath(path);
-                if (fileItem.storage_type === 'supabase') {
-                    // Supabase-backed Office files: use Office Online viewer
-                    previewUrl = 'https://view.officeapps.live.com/op/view.aspx?src=' +
-                        encodeURIComponent(apiUrl) + '&wdOrigin=BROWSELINK';
-                } else {
-                    // Local/other Office files: keep using Google Docs Viewer
+            if (this.isOfficeFile(fileItem) && fileItem.storage_type === 'supabase') {
+                // For Supabase-backed Office files, fetch the public URL then open via Office Online.
+                this.openSupabaseOfficeFile(path);
+            } else {
+                // Determine the preview URL based on file type
+                let previewUrl;
+                if (this.isOfficeFile(fileItem)) {
+                    const baseUrl = window.location.origin;
+                    const apiUrl = baseUrl + '/api/preview/' + this.encodePath(path);
                     previewUrl = 'https://docs.google.com/gview?url=' +
                         encodeURIComponent(apiUrl) + '&embedded=true';
+                } else {
+                    // Use direct API preview for other files
+                    previewUrl = '/api/preview/' + this.encodePath(path);
                 }
-            } else {
-                // Use direct API preview for other files
-                previewUrl = '/api/preview/' + this.encodePath(path);
+                window.open(previewUrl, '_blank');
             }
-            window.open(previewUrl, '_blank');
         }
     }
 
@@ -1289,23 +1307,23 @@ renderPreview(file) {
     const icon = this.getFileIcon(file.name, file.mime_type);
     
     // Determine the preview URL based on file type
-        let previewUrl;
-        if (this.isOfficeFile(file)) {
+    let previewUrl;
+    if (this.isOfficeFile(file)) {
+        // For Supabase-backed Office files, use the direct Supabase public URL with Office Online.
+        if (file.is_supabase && file.public_url) {
+            previewUrl = 'https://view.officeapps.live.com/op/view.aspx?src=' +
+                encodeURIComponent(file.public_url) + '&wdOrigin=BROWSELINK';
+        } else {
             const baseUrl = window.location.origin;
             const apiUrl = baseUrl + '/api/preview/' + this.encodePath(file.path);
-            // For Supabase-backed files, prefer Office Online viewer.
-            if (file.is_supabase) {
-                previewUrl = 'https://view.officeapps.live.com/op/view.aspx?src=' +
-                    encodeURIComponent(apiUrl) + '&wdOrigin=BROWSELINK';
-            } else {
-                // For non-Supabase files, keep using Google Docs Viewer.
-                previewUrl = 'https://docs.google.com/gview?url=' +
-                    encodeURIComponent(apiUrl) + '&embedded=true';
-            }
-        } else {
-            // Use direct API preview for other files
-            previewUrl = '/api/preview/' + this.encodePath(file.path);
+            // For non-Supabase files, keep using Google Docs Viewer.
+            previewUrl = 'https://docs.google.com/gview?url=' +
+                encodeURIComponent(apiUrl) + '&embedded=true';
         }
+    } else {
+        // Use direct API preview for other files
+        previewUrl = '/api/preview/' + this.encodePath(file.path);
+    }
     
     $('.preview-icon').attr('class', icon + ' preview-icon');
     $('.preview-filename').html(`
@@ -1335,16 +1353,17 @@ loadPreviewContent(file) {
     console.log('loadPreviewContent called with file:', file);
     console.log('isOfficeFile result:', this.isOfficeFile(file));
     
-    const previewUrl = '/api/preview/' + this.encodePath(file.path);
-    
     if (this.isOfficeFile(file)) {
         console.log('Showing Office preview for:', file.name);
         this.showOfficePreview(file);
     } else if (file.mime_type && file.mime_type.startsWith('image/')) {
+        const previewUrl = '/api/preview/' + this.encodePath(file.path);
         this.showImagePreview(previewUrl, file);
     } else if (file.mime_type === 'application/pdf') {
+        const previewUrl = '/api/preview/' + this.encodePath(file.path);
         this.showPdfPreview(previewUrl, file);
     } else if (this.isTextFile(file)) {
+        const previewUrl = '/api/preview/' + this.encodePath(file.path);
         this.showTextPreview(previewUrl, file);
     } else {
         console.log('Showing non-previewable file for:', file.name);
@@ -1353,18 +1372,18 @@ loadPreviewContent(file) {
 }
 
 showOfficePreview(file) {
-    const baseUrl = window.location.origin;
-    const apiUrl = baseUrl + '/api/preview/' + this.encodePath(file.path);
-        // For Supabase-backed files, prefer Office Online viewer.
-        let viewerUrl;
-        if (file.is_supabase) {
-            viewerUrl = 'https://view.officeapps.live.com/op/view.aspx?src=' +
-                encodeURIComponent(apiUrl) + '&wdOrigin=BROWSELINK';
-        } else {
-            // For non-Supabase files, keep using Google Docs Viewer.
-            viewerUrl = 'https://docs.google.com/gview?url=' +
-                encodeURIComponent(apiUrl) + '&embedded=true';
-        }
+    // For Supabase-backed files, prefer Office Online with the direct Supabase URL.
+    let viewerUrl;
+    if (file.is_supabase && file.public_url) {
+        viewerUrl = 'https://view.officeapps.live.com/op/view.aspx?src=' +
+            encodeURIComponent(file.public_url) + '&wdOrigin=BROWSELINK';
+    } else {
+        const baseUrl = window.location.origin;
+        const apiUrl = baseUrl + '/api/preview/' + this.encodePath(file.path);
+        // For non-Supabase files, keep using Google Docs Viewer.
+        viewerUrl = 'https://docs.google.com/gview?url=' +
+            encodeURIComponent(apiUrl) + '&embedded=true';
+    }
     
     $('#preview-body').html(`
         <div class="office-preview">
