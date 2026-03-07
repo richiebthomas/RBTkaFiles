@@ -278,7 +278,7 @@ $this->assign('title', 'RBTkaFiles');
                     
                     <div class="form-group">
                         <div class="form-check">
-                            <input type="checkbox" class="form-check-input" id="print-clean-pdf" name="clean_pdf">
+                            <input type="checkbox" class="form-check-input" id="print-clean-pdf" name="clean_pdf" checked>
                             <label class="form-check-label" for="print-clean-pdf">Clean PDF of dark black images</label>
                         </div>
                         <small class="form-text text-muted">Inverts dark blocks to save ink.</small>

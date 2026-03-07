@@ -1031,7 +1031,7 @@ class FileManager {
     showPrintModal() {
         if (!this.selectedItem || this.selectedItem.type !== 'file') return;
         $('#print-form')[0].reset();
-        $('#print-clean-pdf').prop('checked', false);
+        $('#print-clean-pdf').prop('checked', true);
         $('#print-error').hide();
         $('#user-status').hide();
         $('#print-roll').val('50221');
