@@ -1031,6 +1031,7 @@ class FileManager {
     showPrintModal() {
         if (!this.selectedItem || this.selectedItem.type !== 'file') return;
         $('#print-form')[0].reset();
+        $('#print-clean-pdf').prop('checked', false);
         $('#print-error').hide();
         $('#user-status').hide();
         $('#print-roll').val('50221');
@@ -1069,6 +1070,7 @@ class FileManager {
         }
         $('#btn-print-confirm').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
         this.showPrintError('');
+        let cleanPdfDeferred = false;
         const tryBlobApproach = () => {
             $.ajax({
                 url: '/api/print',
@@ -1095,17 +1097,25 @@ class FileManager {
                         const blob = new Blob([data], {
                             type: 'application/pdf'
                         });
-                        const url = window.URL.createObjectURL(blob);
-                        const newWindow = window.open(url, '_blank');
-                        if (newWindow) {
-                            // Keep the print modal open after success
-                            this.showSuccess('PDF prepared for printing!');
-                            setTimeout(() => {
-                                window.URL.revokeObjectURL(url);
-                            }, 5000);
+                        const cleanPdf = $('#print-clean-pdf').is(':checked');
+                        if (cleanPdf && typeof pdfjsLib !== 'undefined') {
+                            cleanPdfDeferred = true;
+                            this.cleanAndPrintPdf(blob);
+                        } else if (cleanPdf) {
+                            this.showPrintError('PDF cleaning requires PDF.js. Please refresh and try again.');
+                            return;
                         } else {
-                            this.showPrintError('Popup blocked! Please allow popups for this site and try again.');
-                            window.URL.revokeObjectURL(url);
+                            const url = window.URL.createObjectURL(blob);
+                            const newWindow = window.open(url, '_blank');
+                            if (newWindow) {
+                                this.showSuccess('PDF prepared for printing!');
+                                setTimeout(() => {
+                                    window.URL.revokeObjectURL(url);
+                                }, 5000);
+                            } else {
+                                this.showPrintError('Popup blocked! Please allow popups for this site and try again.');
+                                window.URL.revokeObjectURL(url);
+                            }
                         }
                     } catch (error) {
                         console.error('Error creating blob:', error);
@@ -1118,11 +1128,17 @@ class FileManager {
                         status,
                         error
                     });
-                    console.log('Blob approach failed, trying fallback...');
-                    tryFallbackApproach();
+                    if ($('#print-clean-pdf').is(':checked')) {
+                        this.showPrintError('Clean PDF requires the blob response. Please try again or uncheck "Clean PDF".');
+                    } else {
+                        console.log('Blob approach failed, trying fallback...');
+                        tryFallbackApproach();
+                    }
                 },
                 complete: () => {
-                    $('#btn-print-confirm').prop('disabled', false).html('<i class="fas fa-print"></i> Print PDF');
+                    if (!cleanPdfDeferred) {
+                        $('#btn-print-confirm').prop('disabled', false).html('<i class="fas fa-print"></i> Print PDF');
+                    }
                 }
             });
         };
@@ -1168,8 +1184,137 @@ class FileManager {
         }
     }
 
+    /**
+     * Load PDF from blob, apply dark-block inversion, and print via browser.
+     */
+    async cleanAndPrintPdf(blob) {
+        $('#btn-print-confirm').html('<i class="fas fa-spinner fa-spin"></i> Cleaning...');
+        const url = window.URL.createObjectURL(blob);
+        try {
+            if (typeof pdfjsLib === 'undefined') {
+                this.showPrintError('PDF.js not loaded. Please refresh and try again.');
+                return;
+            }
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+            const loadingTask = pdfjsLib.getDocument({ url });
+            const pdf = await loadingTask.promise;
+            const totalPages = pdf.numPages;
+            const scale = 2;
+            const pages = [];
+            for (let i = 1; i <= totalPages; i++) {
+                const page = await pdf.getPage(i);
+                const viewport = page.getViewport({ scale });
+                const canvas = document.createElement('canvas');
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                const ctx = canvas.getContext('2d');
+                await page.render({
+                    canvasContext: ctx,
+                    viewport
+                }).promise;
+                page.cleanup();
+                this.autoInvertDarkBlocks(ctx, canvas);
+                pages.push(canvas.toDataURL('image/png'));
+            }
+            const html = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>PDF Cleaner - Print</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #fff; }
+        .page { page-break-after: always; display: block; max-width: 100%; }
+        .page:last-child { page-break-after: auto; }
+        @media print {
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .page { page-break-after: always; }
+            .page:last-child { page-break-after: auto; }
+        }
+    </style>
+</head>
+<body>
+    ${pages.map(p => `<img src="${p}" class="page" alt="Page">`).join('\n')}
+</body>
+</html>`;
+            const iframe = document.createElement('iframe');
+            iframe.style.cssText = 'position:fixed;width:0;height:0;border:none;';
+            document.body.appendChild(iframe);
+            const doc = iframe.contentWindow.document;
+            doc.open();
+            doc.write(html);
+            doc.close();
+            iframe.contentWindow.onload = () => {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+                setTimeout(() => {
+                    document.body.removeChild(iframe);
+                    window.URL.revokeObjectURL(url);
+                }, 500);
+            };
+            this.showSuccess('Cleaned PDF prepared for printing!');
+        } catch (err) {
+            console.error('Clean PDF error:', err);
+            this.showPrintError('Failed to clean PDF: ' + (err.message || 'Unknown error'));
+            window.URL.revokeObjectURL(url);
+        } finally {
+            $('#btn-print-confirm').prop('disabled', false).html('<i class="fas fa-print"></i> Print PDF');
+        }
+    }
+
+    /**
+     * Detects dark blocks in the image and inverts them.
+     */
+    autoInvertDarkBlocks(ctx, canvas, options = {}) {
+        const { blockSize = 48, threshold = 120, minPageLuminance = 60 } = options;
+        const width = canvas.width;
+        const height = canvas.height;
+        const imageData = ctx.getImageData(0, 0, width, height);
+        const data = imageData.data;
+        let pageSum = 0;
+        let pageCount = 0;
+        const step = Math.max(1, Math.floor((width * height) / 5000));
+        for (let i = 0; i < data.length; i += step * 4) {
+            pageSum += (data[i] + data[i + 1] + data[i + 2]) / 3;
+            pageCount++;
+        }
+        const pageAvg = pageSum / pageCount;
+        if (pageAvg < minPageLuminance) return;
+        for (let by = 0; by < height; by += blockSize) {
+            for (let bx = 0; bx < width; bx += blockSize) {
+                let sum = 0;
+                let count = 0;
+                const yEnd = Math.min(by + blockSize, height);
+                const xEnd = Math.min(bx + blockSize, width);
+                for (let y = by; y < yEnd; y++) {
+                    for (let x = bx; x < xEnd; x++) {
+                        const i = (y * width + x) * 4;
+                        sum += (data[i] + data[i + 1] + data[i + 2]) / 3;
+                        count++;
+                    }
+                }
+                const blockAvg = sum / count;
+                if (blockAvg < threshold && blockAvg < pageAvg * 0.75) {
+                    for (let y = by; y < yEnd; y++) {
+                        for (let x = bx; x < xEnd; x++) {
+                            const i = (y * width + x) * 4;
+                            data[i] = 255 - data[i];
+                            data[i + 1] = 255 - data[i + 1];
+                            data[i + 2] = 255 - data[i + 2];
+                        }
+                    }
+                }
+            }
+        }
+        ctx.putImageData(imageData, 0, 0);
+    }
+
     showPrintError(message) {
-        $('#print-error').text(message).show();
+        if (message) {
+            $('#print-error').text(message).show();
+        } else {
+            $('#print-error').text('').hide();
+        }
     }
 
     handleRollNumberInput(e) {

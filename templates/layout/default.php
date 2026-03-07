@@ -224,7 +224,7 @@ $appTitle = 'RBTkaFiles';
     <?= $this->fetch('css') ?>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm custom-navbar">
+    <nav class="navbar navbar-expand-lg navbar-bg-shadow-sm custom-navbar">
         <div class="container-fluid">
             <a class="navbar-brand glitch-text" href="<?= $this->Url->build('/') ?>">📁 RBTkaFiles</a>
             
@@ -253,7 +253,7 @@ $appTitle = 'RBTkaFiles';
         <?= $this->fetch('content') ?>
     </main>
 
-    <footer class="bg-dark text-light text-center py-3 mt-5">
+    <footer class="bg-text-light text-center py-3 mt-5">
         <div class="container">
             <small>
                 &copy; <?= date('Y') ?> RBTkaFiles. All Right Reserved. Probably

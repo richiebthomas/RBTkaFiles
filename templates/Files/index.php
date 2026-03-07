@@ -276,7 +276,15 @@ $this->assign('title', 'RBTkaFiles');
                                placeholder="No need to type 'Lab'">
                     </div>
                     
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="print-clean-pdf" name="clean_pdf">
+                            <label class="form-check-label" for="print-clean-pdf">Clean PDF of dark black images</label>
+                        </div>
+                        <small class="form-text text-muted">Inverts dark blocks to save ink.</small>
+                    </div>
                     
+                    <div id="print-error" class="alert alert-danger mt-2" role="alert" style="display: none;"></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
@@ -1420,6 +1428,9 @@ window.currentPath = '<?= h($path) ?>';
 $this->Html->scriptEnd();
 
 // Add the notes CSS inline to avoid loading issues
+
+// PDF.js for clean PDF feature (load before file-manager) - v3 has legacy UMD build
+$this->append('script', '<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>');
 
 // Add the file manager script
 $this->Html->script('file-manager', ['block' => true]);
