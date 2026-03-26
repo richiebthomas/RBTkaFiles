@@ -426,7 +426,22 @@ $appTitle = 'RBTkaFiles';
             if (typeof firebase === 'undefined') return;
             const db = firebase.database();
             const cursorsRef = db.ref('cursors');
-            const myUserId = window.firebaseUserId || ('user_' + Math.random().toString(36).substr(2, 9));
+            // Use the same stable ID for presence + cursors so we don't create new
+            // cursor nodes on every refresh (which otherwise leaves stale entries behind).
+            let myUserId = window.firebaseUserId;
+            try {
+                if (!myUserId) {
+                    const storedId = window.localStorage.getItem('rbtka_presence_user_id');
+                    if (storedId && typeof storedId === 'string') myUserId = storedId;
+                }
+            } catch (e) {
+                // localStorage might be unavailable; fall back to a best-effort id below.
+            }
+            if (!myUserId || typeof myUserId !== 'string') {
+                myUserId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                try { window.localStorage.setItem('rbtka_presence_user_id', myUserId); } catch (e) {}
+            }
+            window.firebaseUserId = myUserId;
 
             function getCurrentCursorContext() {
                 try {
@@ -449,7 +464,66 @@ $appTitle = 'RBTkaFiles';
             }
 
             const myCursorRef = cursorsRef.child(myUserId);
-            myCursorRef.onDisconnect().remove();
+
+            // Ensure we actually register the deletion callback only while connected.
+            // (If we set onDisconnect too early, it may not get registered in some edge cases.)
+            const connectedRef = firebase.database().ref('.info/connected');
+            connectedRef.on('value', function (snapshot) {
+                if (snapshot.val() === true) {
+                    myCursorRef.onDisconnect().remove();
+                }
+            });
+
+            // Extra belt-and-suspenders: if the user navigates away, attempt an explicit remove.
+            // onDisconnect should still be the source of truth, but this helps when disconnect
+            // isn't clean (tab crashes, network drops, etc.).
+            function tryRemoveMyCursor() {
+                try {
+                    myCursorRef.remove();
+                } catch (e) {}
+            }
+            window.addEventListener('pagehide', tryRemoveMyCursor);
+            window.addEventListener('beforeunload', tryRemoveMyCursor);
+            document.addEventListener('visibilitychange', function () {
+                if (document.visibilityState === 'hidden') tryRemoveMyCursor();
+            });
+
+            // Best-effort stale cleanup (prevents old cursor nodes from lingering forever if some clients
+            // never get a clean disconnect). This depends on your DB rules allowing deletes.
+            const CURSOR_MAX_AGE_MS = 20000;
+            const CURSOR_CLEANUP_EVERY_MS = 30000;
+            let cleanupTimer = null;
+            function cleanupStaleCursors() {
+                const cutoff = Date.now() - CURSOR_MAX_AGE_MS;
+                cursorsRef
+                    .orderByChild('ts')
+                    .endAt(cutoff)
+                    .once('value')
+                    .then(function (snapshot) {
+                        snapshot.forEach(function (childSnap) {
+                            const key = childSnap.key;
+                            if (!key || key === myUserId) return;
+
+                            // Only delete stale entries; active users should have recent `ts`.
+                            const val = childSnap.val() || {};
+
+                            // If context is present, don't delete cursors that look "active" in another context.
+                            // (Still safe to omit this if you prefer fully global cleanup.)
+                            if (val && typeof val.context === 'string') {
+                                if (val.context !== getCurrentCursorContext()) return;
+                            }
+
+                            // Best-effort delete; ignore permission/rule failures.
+                            childSnap.ref.remove().catch(function () {});
+                        });
+                    })
+                    .catch(function () {});
+            }
+            cleanupStaleCursors();
+            cleanupTimer = window.setInterval(cleanupStaleCursors, CURSOR_CLEANUP_EVERY_MS);
+            window.addEventListener('beforeunload', function () {
+                if (cleanupTimer) window.clearInterval(cleanupTimer);
+            });
 
             // Track and throttle own cursor updates
             let lastSent = 0;
